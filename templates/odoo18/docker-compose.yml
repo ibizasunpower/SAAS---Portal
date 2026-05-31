@@ -1,0 +1,27 @@
+version: '3.8'
+
+networks:
+  odoo-network:
+    external: true
+
+services:
+  web:
+    image: odoo:18.0
+    container_name: template-ibizasunpower
+    restart: unless-stopped
+    networks:
+      - odoo-network
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - ../../common18:/mnt/common18
+      - ./config:/etc/odoo
+      - odoo-web-data-8001:/var/lib/odoo
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=Enter@123!
+
+volumes:
+  odoo-web-data-8001:

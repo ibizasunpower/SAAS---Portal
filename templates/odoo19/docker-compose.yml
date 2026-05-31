@@ -1,0 +1,29 @@
+version: '3.8'
+
+networks:
+  odoo-network:
+    external: true
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.odoo-openai
+    container_name: odoo19-template
+    restart: unless-stopped
+    networks:
+      - odoo-network
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - ../../common19:/mnt/common19
+      - ./config:/etc/odoo
+      - odoo-web-data-8002:/var/lib/odoo
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=Enter@123!
+
+volumes:
+  odoo-web-data-8002:

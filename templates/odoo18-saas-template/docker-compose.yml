@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    image: odoo18-saas-template:latest
+    container_name: tenant1-odoo
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./custom-addons:/opt/odoo/custom-addons
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=odoo
+      - DB_PASSWORD=my_secure_db_password
+      - DB_NAME=tenant1_db
+      - ADMIN_PASSWORD=superadmin_secret
+      - WORKERS=auto
+      - MAX_CRON_THREADS=2
+      - INIT_MODULES=base,web,account,sale
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    container_name: tenant1-db
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=my_secure_db_password
+      - POSTGRES_DB=postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  odoo-data:
+  db-data:

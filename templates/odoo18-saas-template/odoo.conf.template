@@ -1,0 +1,13 @@
+[options]
+addons_path = /opt/odoo/odoo/addons,/opt/odoo/custom-addons${OCA_ADDONS_PATHS}
+admin_passwd = ${ADMIN_PASSWORD}
+db_host = ${DB_HOST}
+db_port = ${DB_PORT}
+db_user = ${DB_USER}
+db_password = ${DB_PASSWORD}
+dbfilter = ^${DB_NAME}$
+proxy_mode = True
+workers = ${WORKERS}
+max_cron_threads = ${MAX_CRON_THREADS}
+data_dir = /var/lib/odoo
+list_db = ${LIST_DB}

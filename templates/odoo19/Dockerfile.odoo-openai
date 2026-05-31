@@ -1,0 +1,21 @@
+# Base Odoo 19 image
+FROM odoo:19.0
+
+# Switch to root to install system packages
+USER root
+
+# Install build tools and Python dependencies
+RUN apt-get update && \
+    apt-get install -y build-essential libffi-dev python3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy requirements.txt into the container
+COPY requirements.txt /tmp/requirements.txt
+
+# Install packages system-wide (no venv needed since we're building a dedicated image)
+# --break-system-packages is required for Ubuntu 24.04 (PEP 668)
+# --ignore-installed prevents conflicts with Debian system packages
+RUN pip3 install -r /tmp/requirements.txt --break-system-packages --ignore-installed
+
+# Switch back to odoo user
+USER odoo
