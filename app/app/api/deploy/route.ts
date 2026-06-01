@@ -6,17 +6,46 @@ import { registry } from '@/lib/registry';
 import { logger } from '@/lib/logger';
 import fs from 'fs-extra';
 import path from 'path';
-import { exec } from 'child_process';
-import util from 'util';
+import { spawn } from 'child_process';
 import crypto from 'crypto';
-
-const execAsync = util.promisify(exec);
 
 // Configuration
 const BASE_DIR = process.env.BASE_DIR || (process.platform === 'win32' ? 'd:/!ODOO/ODOO Apps/SASS - Portal' : '/home/portal');
 const TEMPLATE_DIR = path.join(BASE_DIR, 'templates');
 const PG_PASSWORD = process.env.PG_PASSWORD || 'Enter@123!';
 const DB_CONTAINER = process.env.DB_CONTAINER || 'db';
+
+// Helper to spawn processes and capture output dynamically
+function runCommandStream(
+    command: string,
+    args: string[],
+    options: any,
+    onLog: (data: string, type: 'stdout' | 'stderr') => void
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const proc = spawn(command, args, options);
+        
+        proc.stdout?.on('data', (chunk) => {
+            onLog(chunk.toString('utf8'), 'stdout');
+        });
+        
+        proc.stderr?.on('data', (chunk) => {
+            onLog(chunk.toString('utf8'), 'stderr');
+        });
+        
+        proc.on('close', (code) => {
+            if (code === 0) {
+                resolve();
+            } else {
+                reject(new Error(`Command "${command} ${args.join(' ')}" failed with exit code ${code}`));
+            }
+        });
+        
+        proc.on('error', (err) => {
+            reject(err);
+        });
+    });
+}
 
 export async function POST(request: Request) {
     const instanceId = crypto.randomUUID();
@@ -27,6 +56,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { clientName, version, domain, selected_modules } = body;
 
+        // Validation Checks (Fast failures)
         if (!clientName || !version || !domain) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
@@ -39,23 +69,9 @@ export async function POST(request: Request) {
         containerName = `tenant_${slug}`;
         dbName = `tenant_${slug}`;
 
-        await logger.info('CREATION', `Starting deployment for client: ${clientName} (${containerName})`, { instanceId, slug, version, domain });
-
-        // Parse selected modules list
-        let modulesToInstallSet = new Set<string>(['base', 'web']);
-        if (Array.isArray(selected_modules) && selected_modules.length > 0) {
-            selected_modules.forEach((mod: string) => {
-                if (mod && typeof mod === 'string') {
-                    modulesToInstallSet.add(mod.trim());
-                }
-            });
-        }
-        const modulesList = Array.from(modulesToInstallSet).join(',');
-
         // 1. Collision Checks
         const registryRecord = await registry.getInstance(containerName);
         if (registryRecord) {
-            await logger.warn('CREATION', `Collision detected: Instance ${containerName} already in registry`, { instanceId });
             return NextResponse.json({ error: `Client or database with name '${slug}' already exists` }, { status: 409 });
         }
 
@@ -65,11 +81,20 @@ export async function POST(request: Request) {
             c.Names.some(n => n.replace('/', '') === containerName)
         );
         if (nameCollision) {
-            await logger.warn('CREATION', `Collision detected: Container ${containerName} exists in Docker but not registry`, { instanceId });
             return NextResponse.json({ error: `Docker container '${containerName}' already exists. Please run cleanup first.` }, { status: 409 });
         }
 
-        // 2. Find Available Port
+        const clientDir = path.join(BASE_DIR, 'clients', containerName);
+        if (fs.existsSync(clientDir)) {
+            return NextResponse.json({ error: `Client directory ${containerName} already exists on disk` }, { status: 409 });
+        }
+
+        const templatePath = path.join(TEMPLATE_DIR, `odoo${version}`);
+        if (!fs.existsSync(templatePath)) {
+            return NextResponse.json({ error: `Template for version ${version} not found` }, { status: 404 });
+        }
+
+        // 2. Select Port
         const usedPorts = new Set<number>();
         containers.forEach(c => {
             c.Ports?.forEach(p => {
@@ -82,228 +107,282 @@ export async function POST(request: Request) {
         while (usedPorts.has(port)) {
             port++;
             if (port > MAX_PORT) {
-                await logger.error('CREATION', 'No ports available in 8005-8500 range', { instanceId });
                 return NextResponse.json({ error: 'No available ports in range 8005-8500' }, { status: 503 });
             }
         }
 
-        // 3. Create PostgreSQL Database directly
-        await logger.info('DATABASE', `Pre-creating database ${dbName} in PostgreSQL...`, { instanceId });
-        try {
-            await execAsync(
-                `docker exec -e PGPASSWORD=${PG_PASSWORD} ${DB_CONTAINER} psql -U odoo postgres -c "CREATE DATABASE \\"${dbName}\\";"`
-            );
-            await logger.info('DATABASE', `Database ${dbName} created successfully in Postgres`, { instanceId });
-        } catch (dbErr: any) {
-            if (dbErr.message.includes('already exists')) {
-                await logger.warn('DATABASE', `Database ${dbName} already exists in Postgres, reuse database`, { instanceId });
-            } else {
-                await logger.error('DATABASE', `Failed to create database ${dbName}`, { error: dbErr.message, instanceId });
-                throw new Error(`Database creation failed: ${dbErr.message}`);
-            }
-        }
-
-        // 4. Copy Template
-        const templatePath = path.join(TEMPLATE_DIR, `odoo${version}`);
-        if (!fs.existsSync(templatePath)) {
-            return NextResponse.json({ error: `Template for version ${version} not found at ${templatePath}` }, { status: 404 });
-        }
-
-        const clientDir = path.join(BASE_DIR, 'clients', containerName);
-        if (fs.existsSync(clientDir)) {
-            return NextResponse.json({ error: `Client directory ${containerName} already exists on disk` }, { status: 409 });
-        }
-
-        await logger.info('CONTAINER', `Copying templates to ${clientDir}`, { instanceId });
-        await fs.copy(templatePath, clientDir);
-
-        // 5. Customize configuration files
-        await logger.info('CONTAINER', `Customizing configuration files for ${containerName}`, { instanceId });
-        
-        // docker-compose.yml
-        const composePath = path.join(clientDir, 'docker-compose.yml');
-        let composeContent = await fs.readFile(composePath, 'utf8');
-        composeContent = composeContent.replace(/container_name: .*/, `container_name: ${containerName}`);
-        composeContent = composeContent.replace(/"\d+:(\d+)"/, `"${port}:$1"`);
-        
-        const volumeName = `odoo-web-data-${port}`;
-        composeContent = composeContent.replace(/odoo-web-data-\d+/g, volumeName);
-
-        if (!composeContent.includes('labels:')) {
-            composeContent = composeContent.replace('environment:', `labels:\n      - "com.odoo.domain=${domain}"\n    environment:`);
-        } else {
-            composeContent = composeContent.replace('labels:', `labels:\n      - "com.odoo.domain=${domain}"`);
-        }
-        await fs.writeFile(composePath, composeContent);
-
-        // odoo.conf
-        const confPath = path.join(clientDir, 'config', 'odoo.conf');
-        if (fs.existsSync(confPath)) {
-            let confContent = await fs.readFile(confPath, 'utf8');
-            
-            // Set explicit db_name and dbfilter to enforce tenant isolation
-            confContent = confContent.replace(/dbfilter = .*/, `dbfilter = ^${dbName}$`);
-            if (!confContent.includes('db_name =')) {
-                confContent += `\ndb_name = ${dbName}\n`;
-            } else {
-                confContent = confContent.replace(/db_name = .*/, `db_name = ${dbName}`);
-            }
-
-            if (!confContent.includes('db_host =')) {
-                confContent += `\ndb_host = db\n`;
-            } else {
-                confContent = confContent.replace(/db_host = .*/, `db_host = db`);
-            }
-
-            const systemAddons = '/usr/lib/python3/dist-packages/odoo/addons';
-            if (confContent.includes('addons_path =')) {
-                if (!confContent.includes(systemAddons)) {
-                    confContent = confContent.replace('addons_path =', `addons_path = ${systemAddons},`);
+        // Setup installation modules list
+        let modulesToInstallSet = new Set<string>(['base', 'web']);
+        if (Array.isArray(selected_modules) && selected_modules.length > 0) {
+            selected_modules.forEach((mod: string) => {
+                if (mod && typeof mod === 'string') {
+                    modulesToInstallSet.add(mod.trim());
                 }
-            } else {
-                confContent += `\naddons_path = ${systemAddons},/mnt/extra-addons\n`;
-            }
-            await fs.writeFile(confPath, confContent);
-        }
-
-        // 6. Write registry entry BEFORE starting container (Safety rule)
-        const addonsPath = path.join(clientDir, 'addons');
-        const configPath = path.join(clientDir, 'config');
-        const newRecord = {
-            instance_id: instanceId,
-            container_name: containerName,
-            database_name: dbName,
-            odoo_port: port,
-            addons_path: addonsPath,
-            config_path: configPath,
-            status: 'failed' as const, // starts with failed until health check verifies
-            created_at: new Date().toISOString(),
-            last_health_check: new Date().toISOString(),
-            client_name: clientName,
-            domain: domain,
-            version: version
-        };
-        await registry.addInstance(newRecord);
-
-        // 7. Start Container
-        await logger.info('CONTAINER', `Launching docker container for ${containerName}...`, { instanceId });
-        await execAsync(`docker compose up -d --build`, { cwd: clientDir });
-
-        // 8. Initialize Odoo Database via CLI
-        await logger.info('DATABASE', `Initializing database tables for ${dbName}...`, { instanceId });
-        try {
-            await execAsync(`docker exec ${containerName} odoo -d ${dbName} -i ${modulesList} --stop-after-init --no-http --without-demo=all`);
-            await logger.info('DATABASE', `Database tables successfully initialized for ${dbName}.`, { instanceId });
-        } catch (initErr: any) {
-            await logger.error('DATABASE', `Database initialization failed for ${dbName}: ${initErr.message}`, { instanceId });
-            
-            // Teardown and roll back changes to avoid leaving a corrupted state
-            await logger.info('DATABASE', `Starting cleanup for failed deployment of ${containerName}...`, { instanceId });
-            try {
-                await execAsync(`docker compose down -v`, { cwd: clientDir });
-            } catch (dockerDownErr: any) {
-                await logger.warn('DATABASE', `Docker compose down failed during cleanup: ${dockerDownErr.message}`, { instanceId });
-            }
-
-            try {
-                await execAsync(
-                    `docker exec -e PGPASSWORD=${PG_PASSWORD} ${DB_CONTAINER} psql -U odoo postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';" && docker exec -e PGPASSWORD=${PG_PASSWORD} ${DB_CONTAINER} psql -U odoo postgres -c "DROP DATABASE IF EXISTS \\"${dbName}\\";"`
-                );
-            } catch (dbDropErr: any) {
-                await logger.warn('DATABASE', `Failed to drop database during cleanup: ${dbDropErr.message}`, { instanceId });
-            }
-
-            try {
-                await fs.remove(clientDir);
-            } catch (fsErr: any) {
-                await logger.warn('DATABASE', `Failed to remove client directory during cleanup: ${fsErr.message}`, { instanceId });
-            }
-
-            try {
-                await registry.deleteInstanceRecord(instanceId);
-            } catch (registryErr: any) {
-                await logger.warn('DATABASE', `Failed to delete instance from registry during cleanup: ${registryErr.message}`, { instanceId });
-            }
-
-            const cleanErrMsg = initErr.stderr || initErr.stdout || initErr.message;
-            return NextResponse.json({ 
-                error: `Database initialization failed. This is usually due to a missing Python package, invalid syntax, or missing dependencies in your selected modules. Error: ${cleanErrMsg}`
-            }, { status: 500 });
-        }
-
-        // Restart container to refresh registry and assets cache
-        await logger.info('CONTAINER', `Restarting container ${containerName} after initialization...`, { instanceId });
-        await execAsync(`docker restart ${containerName}`);
-
-        // 9. Health Check Verification Loop
-        await logger.info('HEALTH', `Starting health verification loop for ${containerName} on port ${port}`, { instanceId });
-        let isHealthy = false;
-        let attempts = 0;
-        const maxAttempts = 15;
-        const hostIp = process.env.NPM_FORWARD_HOST || '172.17.0.1';
-
-        while (attempts < maxAttempts && !isHealthy) {
-            attempts++;
-            await new Promise(r => setTimeout(r, 3000));
-            try {
-                const urls = [
-                    `http://127.0.0.1:${port}/web/health`,
-                    `http://127.0.0.1:${port}/`,
-                    `http://${hostIp}:${port}/web/health`,
-                    `http://${hostIp}:${port}/`
-                ];
-                for (const url of urls) {
-                    try {
-                        const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
-                        if (res.ok || res.status === 303 || res.status === 302) {
-                            isHealthy = true;
-                            break;
-                        }
-                    } catch {
-                        // try next url
-                    }
-                }
-            } catch (healthErr) {
-                // ignore
-            }
-        }
-
-        if (isHealthy) {
-            await registry.updateInstance(instanceId, {
-                status: 'active',
-                last_health_check: new Date().toISOString()
             });
-            await logger.info('CREATION', `Instance ${containerName} is healthy. Marked status as ACTIVE.`, { instanceId });
-        } else {
-            await logger.error('CREATION', `Instance ${containerName} failed health check. Left status as FAILED.`, { instanceId });
-            return NextResponse.json({
-                error: 'Instance deployed but failed health check. Check logs.',
-                containerName,
-                port
-            }, { status: 500 });
         }
+        const modulesList = Array.from(modulesToInstallSet).join(',');
 
-        // 10. Configure Nginx Proxy Manager (production only)
-        if (process.platform !== 'win32') {
-            try {
-                const forwardHost = process.env.NPM_FORWARD_HOST || '172.17.0.1';
-                await logger.info('CONTAINER', `Creating NPM Proxy Host: ${domain} -> ${forwardHost}:${port}`, { instanceId });
-                await npmClient.createProxyHost(domain, forwardHost, port);
-            } catch (npmErr: any) {
-                await logger.error('CONTAINER', `Failed to configure NPM Proxy Host: ${npmErr.message}`, { instanceId });
+        // Return ReadableStream for live server log updates
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+            async start(controller) {
+                const sendLog = (type: 'info' | 'stdout' | 'stderr' | 'error' | 'success', message: string, payload?: any) => {
+                    const chunk = JSON.stringify({ type, message, timestamp: new Date().toISOString(), ...payload }) + '\n';
+                    controller.enqueue(encoder.encode(chunk));
+                };
+
+                const handleOutput = (data: string, type: 'stdout' | 'stderr') => {
+                    const lines = data.split('\n');
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            sendLog(type, line);
+                        }
+                    });
+                };
+
+                try {
+                    await logger.info('CREATION', `Starting streamed deployment for: ${clientName}`, { instanceId, slug, version, domain });
+                    
+                    // Step 1: Pre-creating database
+                    sendLog('info', `[1/6] Pre-creating PostgreSQL database: ${dbName}...`);
+                    try {
+                        await runCommandStream(
+                            'docker',
+                            ['exec', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', 'postgres', '-c', `CREATE DATABASE "${dbName}";`],
+                            {},
+                            handleOutput
+                        );
+                        sendLog('info', `Successfully pre-created database ${dbName}.`);
+                    } catch (dbErr: any) {
+                        if (dbErr.message.includes('already exists')) {
+                            sendLog('info', `Database ${dbName} already exists, reusing.`);
+                        } else {
+                            throw new Error(`Failed to create database: ${dbErr.message}`);
+                        }
+                    }
+
+                    // Step 2: Copy template
+                    sendLog('info', `[2/6] Copying Odoo template files to clients/${containerName}...`);
+                    await fs.copy(templatePath, clientDir);
+
+                    // Step 3: Customize configuration
+                    sendLog('info', `[3/6] Customizing docker-compose.yml and odoo.conf files...`);
+                    
+                    // docker-compose.yml
+                    const composePath = path.join(clientDir, 'docker-compose.yml');
+                    let composeContent = await fs.readFile(composePath, 'utf8');
+                    composeContent = composeContent.replace(/container_name: .*/, `container_name: ${containerName}`);
+                    composeContent = composeContent.replace(/"\d+:(\d+)"/, `"${port}:$1"`);
+                    
+                    const volumeName = `odoo-web-data-${port}`;
+                    composeContent = composeContent.replace(/odoo-web-data-\d+/g, volumeName);
+
+                    if (!composeContent.includes('labels:')) {
+                        composeContent = composeContent.replace('environment:', `labels:\n      - "com.odoo.domain=${domain}"\n    environment:`);
+                    } else {
+                        composeContent = composeContent.replace('labels:', `labels:\n      - "com.odoo.domain=${domain}"`);
+                    }
+                    await fs.writeFile(composePath, composeContent);
+
+                    // odoo.conf
+                    const confPath = path.join(clientDir, 'config', 'odoo.conf');
+                    if (fs.existsSync(confPath)) {
+                        let confContent = await fs.readFile(confPath, 'utf8');
+                        confContent = confContent.replace(/dbfilter = .*/, `dbfilter = ^${dbName}$`);
+                        if (!confContent.includes('db_name =')) {
+                            confContent += `\ndb_name = ${dbName}\n`;
+                        } else {
+                            confContent = confContent.replace(/db_name = .*/, `db_name = ${dbName}`);
+                        }
+
+                        if (!confContent.includes('db_host =')) {
+                            confContent += `\ndb_host = db\n`;
+                        } else {
+                            confContent = confContent.replace(/db_host = .*/, `db_host = db`);
+                        }
+
+                        const systemAddons = '/usr/lib/python3/dist-packages/odoo/addons';
+                        if (confContent.includes('addons_path =')) {
+                            if (!confContent.includes(systemAddons)) {
+                                confContent = confContent.replace('addons_path =', `addons_path = ${systemAddons},`);
+                            }
+                        } else {
+                            confContent += `\naddons_path = ${systemAddons},/mnt/extra-addons\n`;
+                        }
+                        await fs.writeFile(confPath, confContent);
+                    }
+
+                    // Register record
+                    sendLog('info', `Registering instance record inside SASS database registry...`);
+                    const addonsPath = path.join(clientDir, 'addons');
+                    const configPath = path.join(clientDir, 'config');
+                    const newRecord = {
+                        instance_id: instanceId,
+                        container_name: containerName,
+                        database_name: dbName,
+                        odoo_port: port,
+                        addons_path: addonsPath,
+                        config_path: configPath,
+                        status: 'failed' as const, // Starts as failed until verified healthy
+                        created_at: new Date().toISOString(),
+                        last_health_check: new Date().toISOString(),
+                        client_name: clientName,
+                        domain: domain,
+                        version: version
+                    };
+                    await registry.addInstance(newRecord);
+
+                    // Step 4: Docker up
+                    sendLog('info', `[4/6] Starting container environment with Docker Compose...`);
+                    await runCommandStream(
+                        'docker',
+                        ['compose', 'up', '-d', '--build'],
+                        { cwd: clientDir },
+                        handleOutput
+                    );
+
+                    // Step 5: Database CLI Initialization
+                    sendLog('info', `[5/6] Initializing Odoo database with selected modules: [${modulesList}] (this may take up to 30s)...`);
+                    await runCommandStream(
+                        'docker',
+                        ['exec', containerName, 'odoo', '-d', dbName, '-i', modulesList, '--stop-after-init', '--no-http', '--without-demo=all'],
+                        {},
+                        handleOutput
+                    );
+                    sendLog('info', `Database tables successfully initialized for ${dbName}.`);
+
+                    // Restart container to refresh assets and load addons registry
+                    sendLog('info', `Restarting Odoo container to apply registry cache changes...`);
+                    await runCommandStream(
+                        'docker',
+                        ['restart', containerName],
+                        {},
+                        handleOutput
+                    );
+
+                    // Step 6: Health verification loop
+                    sendLog('info', `[6/6] Starting container health checks...`);
+                    let isHealthy = false;
+                    let attempts = 0;
+                    const maxAttempts = 15;
+                    const hostIp = process.env.NPM_FORWARD_HOST || '172.17.0.1';
+
+                    while (attempts < maxAttempts && !isHealthy) {
+                        attempts++;
+                        sendLog('info', `Health Check Attempt ${attempts}/${maxAttempts}: Verifying port ${port}...`);
+                        await new Promise(r => setTimeout(r, 3000));
+                        try {
+                            const urls = [
+                                `http://127.0.0.1:${port}/web/health`,
+                                `http://127.0.0.1:${port}/`,
+                                `http://${hostIp}:${port}/web/health`,
+                                `http://${hostIp}:${port}/`
+                            ];
+                            for (const url of urls) {
+                                try {
+                                    const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
+                                    if (res.ok || res.status === 303 || res.status === 302) {
+                                        isHealthy = true;
+                                        break;
+                                    }
+                                } catch {
+                                    // next url
+                                }
+                            }
+                        } catch {
+                            // ignore
+                        }
+                    }
+
+                    if (isHealthy) {
+                        await registry.updateInstance(instanceId, {
+                            status: 'active',
+                            last_health_check: new Date().toISOString()
+                        });
+                        sendLog('info', `Health check successful! Portal status set to active.`);
+                    } else {
+                        throw new Error('Container spawned but timed out during health check verification.');
+                    }
+
+                    // Step 7: Nginx Proxy Manager setup
+                    if (process.platform !== 'win32') {
+                        sendLog('info', `Configuring Nginx Proxy Manager routing for domain ${domain}...`);
+                        try {
+                            const forwardHost = process.env.NPM_FORWARD_HOST || '172.17.0.1';
+                            await npmClient.createProxyHost(domain, forwardHost, port);
+                            sendLog('info', `NPM Proxy Host configured successfully.`);
+                        } catch (npmErr: any) {
+                            sendLog('stderr', `NPM integration error: ${npmErr.message}. You may need to create mapping manually.`);
+                        }
+                    }
+
+                    // Success!
+                    sendLog('success', `Deployment completed successfully!`, {
+                        port,
+                        url: `http://${domain}`,
+                        instanceId
+                    });
+
+                } catch (err: any) {
+                    sendLog('error', `Deployment crashed: ${err.message}`);
+                    sendLog('info', `Starting rollback procedure to clean server resources...`);
+
+                    try {
+                        sendLog('info', `Stopping and removing Docker container...`);
+                        await runCommandStream('docker', ['compose', 'down', '-v'], { cwd: clientDir }, handleOutput);
+                    } catch (composeErr: any) {
+                        sendLog('stderr', `Rollback error (docker compose down): ${composeErr.message}`);
+                    }
+
+                    try {
+                        sendLog('info', `Dropping PostgreSQL database ${dbName}...`);
+                        await runCommandStream(
+                            'docker',
+                            ['exec', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', 'postgres', '-c', `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';`],
+                            {},
+                            handleOutput
+                        );
+                        await runCommandStream(
+                            'docker',
+                            ['exec', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', 'postgres', '-c', `DROP DATABASE IF EXISTS "${dbName}";`],
+                            {},
+                            handleOutput
+                        );
+                    } catch (dbErr: any) {
+                        sendLog('stderr', `Rollback error (drop database): ${dbErr.message}`);
+                    }
+
+                    try {
+                        sendLog('info', `Removing directories in ${clientDir}...`);
+                        await fs.remove(clientDir);
+                    } catch (fsErr: any) {
+                        sendLog('stderr', `Rollback error (remove files): ${fsErr.message}`);
+                    }
+
+                    try {
+                        sendLog('info', `Deleting database registry record...`);
+                        await registry.deleteInstanceRecord(instanceId);
+                    } catch (regErr: any) {
+                        sendLog('stderr', `Rollback error (delete registry): ${regErr.message}`);
+                    }
+
+                    sendLog('error', `Rollback completed. Deployment failed.`);
+                } finally {
+                    controller.close();
+                }
             }
-        }
+        });
 
-        return NextResponse.json({
-            success: true,
-            clientName,
-            port,
-            url: `http://${domain}`,
-            instanceId
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive'
+            }
         });
 
     } catch (error: any) {
-        await logger.error('CREATION', 'Deployment process crashed', { error: error.message, instanceId });
+        await logger.error('CREATION', 'Stream initiation crashed', { error: error.message, instanceId });
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

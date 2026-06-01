@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Loader2, Server, Globe, Box, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,16 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
     const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
     const [selectedModules, setSelectedModules] = useState<string[]>([]);
     const [error, setError] = useState("");
+    const [logs, setLogs] = useState<any[]>([]);
+    
+    const logContainerRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to the bottom of the logs container
+    useEffect(() => {
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+    }, [logs]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -40,11 +50,13 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         // Clear selected modules and expanded state when version changes to avoid mismatch
         setSelectedModules([]);
         setExpandedCategories([]);
+        setLogs([]);
     }, [isOpen, formData.version]);
 
     if (!isOpen) return null;
 
     const toggleExpand = (categoryId: string) => {
+        if (loading) return;
         setExpandedCategories(prev => 
             prev.includes(categoryId)
                 ? prev.filter(id => id !== categoryId)
@@ -53,6 +65,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
     };
 
     const handleCategoryChange = (cat: any) => {
+        if (loading) return;
         const moduleIds = cat.modules ? cat.modules.map((m: any) => m.id) : [];
         const allSelected = moduleIds.length > 0 && moduleIds.every((id: string) => selectedModules.includes(id));
         
@@ -66,6 +79,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
     };
 
     const handleModuleChange = (moduleId: string) => {
+        if (loading) return;
         setSelectedModules(prev => 
             prev.includes(moduleId)
                 ? prev.filter(id => id !== moduleId)
@@ -77,6 +91,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         e.preventDefault();
         setLoading(true);
         setError("");
+        setLogs([]);
 
         try {
             const res = await fetch("/api/deploy", {
@@ -88,14 +103,58 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                 }),
             });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Deployment failed");
+            // If response is not a stream (e.g. validation crash)
+            if (!res.ok) {
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const data = await res.json();
+                    throw new Error(data.error || "Deployment initiation failed");
+                } else {
+                    throw new Error(`Deployment failed with status ${res.status}`);
+                }
+            }
 
-            onSuccess();
-            onClose();
+            const reader = res.body?.getReader();
+            if (!reader) throw new Error("Deployment output stream is not readable");
+
+            const decoder = new TextDecoder();
+            let partialLine = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = (partialLine + chunk).split("\n");
+                partialLine = lines.pop() || ""; // save the incomplete line
+
+                for (const line of lines) {
+                    if (line.trim()) {
+                        try {
+                            const logObj = JSON.parse(line);
+                            setLogs(prev => [...prev, logObj]);
+
+                            if (logObj.type === "success") {
+                                setLoading(false);
+                                // Short delay to let user realize it succeeded
+                                setTimeout(() => {
+                                    onSuccess();
+                                    onClose();
+                                }, 2000);
+                            } else if (logObj.type === "error") {
+                                setError(logObj.message);
+                                setLoading(false);
+                            }
+                        } catch (parseErr) {
+                            console.error("Failed to parse log line JSON:", line, parseErr);
+                            // Fallback raw text log
+                            setLogs(prev => [...prev, { type: "stdout", message: line, timestamp: new Date().toISOString() }]);
+                        }
+                    }
+                }
+            }
         } catch (err: any) {
             setError(err.message);
-        } finally {
             setLoading(false);
         }
     };
@@ -105,7 +164,8 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
             <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
                 <button
                     onClick={onClose}
-                    className="absolute right-4 top-4 text-zinc-500 hover:text-white transition-colors"
+                    disabled={loading}
+                    className="absolute right-4 top-4 text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                     <X size={20} />
                 </button>
@@ -132,14 +192,15 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                 <input
                                     type="text"
                                     required
+                                    disabled={loading}
                                     pattern="[a-z0-9-]+"
                                     title="Lowercase letters, numbers and hyphens only"
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-600 transition-all"
+                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-650 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
                                     placeholder="e.g. client-acme-corp"
                                     value={formData.clientName}
                                     onChange={e => setFormData({ ...formData, clientName: e.target.value })}
                                 />
-                                <p className="text-xs text-zinc-500">Will be used for directory and container names.</p>
+                                <p className="text-xs text-zinc-555">Will be used for directory and container names.</p>
                             </div>
 
                             <div className="space-y-2">
@@ -149,9 +210,10 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         type="button"
+                                        disabled={loading}
                                         onClick={() => setFormData({ ...formData, version: "18" })}
                                         className={cn(
-                                            "py-3 px-4 rounded-lg border text-sm font-medium transition-all",
+                                            "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
                                             formData.version === "18"
                                                 ? "bg-blue-500/10 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
                                                 : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
@@ -161,9 +223,10 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                     </button>
                                     <button
                                         type="button"
+                                        disabled={loading}
                                         onClick={() => setFormData({ ...formData, version: "19" })}
                                         className={cn(
-                                            "py-3 px-4 rounded-lg border text-sm font-medium transition-all",
+                                            "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
                                             formData.version === "19"
                                                 ? "bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
                                                 : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
@@ -181,7 +244,8 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                 <input
                                     type="text"
                                     required
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-600 transition-all"
+                                    disabled={loading}
+                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-650 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
                                     placeholder="e.g. odoo.acme.com"
                                     value={formData.domain}
                                     onChange={e => setFormData({ ...formData, domain: e.target.value })}
@@ -195,7 +259,14 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                 disabled={loading}
                                 className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? <Loader2 className="animate-spin" /> : "Deploy Instance"}
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={18} />
+                                        Deploying Instance...
+                                    </>
+                                ) : (
+                                    "Deploy Instance"
+                                )}
                             </button>
                         </div>
                     </div>
@@ -220,8 +291,9 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                                     <label className="flex items-start gap-3 cursor-pointer group py-0.5 select-none">
                                                         <input
                                                             type="checkbox"
+                                                            disabled={loading}
                                                             className={cn(
-                                                                "mt-1 rounded border-zinc-700 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4 cursor-pointer",
+                                                                "mt-1 rounded border-zinc-700 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
                                                                 someSelected && "opacity-60"
                                                             )}
                                                             checked={allSelected}
@@ -256,7 +328,8 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                                             <label key={mod.id} className="flex items-center gap-2.5 cursor-pointer group py-0.5 select-none">
                                                                 <input
                                                                     type="checkbox"
-                                                                    className="rounded border-zinc-800 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-3.5 w-3.5 cursor-pointer"
+                                                                    disabled={loading}
+                                                                    className="rounded border-zinc-800 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-3.5 w-3.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                                     checked={selectedModules.includes(mod.id)}
                                                                     onChange={() => handleModuleChange(mod.id)}
                                                                 />
@@ -280,6 +353,45 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                         </div>
                     </div>
                 </form>
+
+                {/* Live Console Logs positioned at the bottom end of the deployment window */}
+                {(loading || logs.length > 0) && (
+                    <div className="mt-6 border-t border-zinc-800/80 pt-4 space-y-2 animate-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex items-center justify-between text-xs font-semibold text-zinc-400">
+                            <span className="flex items-center gap-1.5">
+                                <span className={cn(
+                                    "h-2 w-2 rounded-full",
+                                    loading ? "bg-blue-500 animate-pulse" : (error ? "bg-red-500" : "bg-emerald-500")
+                                )}></span>
+                                {loading ? "Streaming Live Deployment logs..." : (error ? "Deployment Failed" : "Deployment Completed")}
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-500">
+                                {logs.length} lines captured
+                            </span>
+                        </div>
+                        <div 
+                            ref={logContainerRef}
+                            className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 h-48 overflow-y-auto font-mono text-[10px] text-zinc-300 space-y-1 selection:bg-zinc-800 scrollbar-thin"
+                        >
+                            {logs.map((log, idx) => (
+                                <div 
+                                    key={idx} 
+                                    className={cn(
+                                        "flex items-start gap-2 whitespace-pre-wrap leading-relaxed border-l-2 pl-2 py-0.5",
+                                        log.type === 'info' && "border-blue-500 text-zinc-200",
+                                        log.type === 'stdout' && "border-zinc-800 text-zinc-400",
+                                        log.type === 'stderr' && "border-amber-600/80 text-amber-300",
+                                        log.type === 'error' && "border-red-500 text-red-400 font-bold",
+                                        log.type === 'success' && "border-emerald-500 text-emerald-400 font-bold"
+                                    )}
+                                >
+                                    <span className="text-zinc-600 shrink-0 select-none">[{log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ''}]</span>
+                                    <span>{log.message}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
