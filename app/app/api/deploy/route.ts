@@ -143,6 +143,34 @@ export async function POST(request: Request) {
                 try {
                     await logger.info('CREATION', `Starting streamed deployment for: ${clientName}`, { instanceId, slug, version, domain });
                     
+                    // Collect Python dependencies of selected modules from config
+                    const pythonPackagesToInstall = new Set<string>();
+                    try {
+                        const configPath = path.join(process.cwd(), 'modules_config.json');
+                        if (await fs.pathExists(configPath)) {
+                            const config = await fs.readJson(configPath);
+                            const versionConfig = config[version] || config['18'] || {};
+                            
+                            if (Array.isArray(selected_modules)) {
+                                selected_modules.forEach((modId: string) => {
+                                    for (const catKey of Object.keys(versionConfig)) {
+                                        const mod = versionConfig[catKey].modules?.find((m: any) => m.id === modId);
+                                        if (mod) {
+                                            if (Array.isArray(mod.requirements)) {
+                                                mod.requirements.forEach((req: string) => pythonPackagesToInstall.add(req.trim()));
+                                            }
+                                            if (Array.isArray(mod.external_dependencies?.python)) {
+                                                mod.external_dependencies.python.forEach((req: string) => pythonPackagesToInstall.add(req.trim()));
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    } catch (readErr: any) {
+                        sendLog('stderr', `Warning: Failed to load modules configuration details: ${readErr.message}`);
+                    }
+
                     // Step 1: Pre-creating database
                     sendLog('info', `[1/6] Pre-creating PostgreSQL database: ${dbName}...`);
                     try {
@@ -240,6 +268,23 @@ export async function POST(request: Request) {
                         { cwd: clientDir },
                         handleOutput
                     );
+
+                    // Install Python libraries if required
+                    if (pythonPackagesToInstall.size > 0) {
+                        const packagesList = Array.from(pythonPackagesToInstall);
+                        sendLog('info', `Installing required Python libraries inside container: ${packagesList.join(', ')}...`);
+                        try {
+                            await runCommandStream(
+                                'docker',
+                                ['exec', '-u', 'root', containerName, 'pip3', 'install', ...packagesList],
+                                {},
+                                handleOutput
+                            );
+                            sendLog('info', `Python libraries successfully installed.`);
+                        } catch (pipErr: any) {
+                            sendLog('stderr', `Warning: Python libraries installation had warnings: ${pipErr.message}. Proceeding with Odoo setup.`);
+                        }
+                    }
 
                     // Step 5: Database CLI Initialization
                     sendLog('info', `[5/6] Initializing Odoo database with selected modules: [${modulesList}] (this may take up to 30s)...`);

@@ -73,18 +73,54 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
             // Deselect all
             setSelectedModules(prev => prev.filter(id => !moduleIds.includes(id)));
         } else {
-            // Select all
-            setSelectedModules(prev => Array.from(new Set([...prev, ...moduleIds])));
+            // Select all + their dependencies recursively
+            const depsToSelect = [...moduleIds];
+            const addDependencies = (modId: string) => {
+                for (const c of categories) {
+                    const mod = c.modules?.find((m: any) => m.id === modId);
+                    if (mod && mod.depends) {
+                        mod.depends.forEach((depId: string) => {
+                            const isAvailableCustom = categories.some(catObj => catObj.modules?.some((m: any) => m.id === depId));
+                            if (isAvailableCustom && !depsToSelect.includes(depId)) {
+                                depsToSelect.push(depId);
+                                addDependencies(depId);
+                            }
+                        });
+                    }
+                }
+            };
+            moduleIds.forEach((id: string) => addDependencies(id));
+            setSelectedModules(prev => Array.from(new Set([...prev, ...depsToSelect])));
         }
     };
 
     const handleModuleChange = (moduleId: string) => {
         if (loading) return;
-        setSelectedModules(prev => 
-            prev.includes(moduleId)
-                ? prev.filter(id => id !== moduleId)
-                : [...prev, moduleId]
-        );
+        
+        setSelectedModules(prev => {
+            const isSelected = prev.includes(moduleId);
+            if (isSelected) {
+                return prev.filter(id => id !== moduleId);
+            } else {
+                const depsToSelect = [moduleId];
+                const addDependencies = (modId: string) => {
+                    for (const cat of categories) {
+                        const mod = cat.modules?.find((m: any) => m.id === modId);
+                        if (mod && mod.depends) {
+                            mod.depends.forEach((depId: string) => {
+                                const isAvailableCustom = categories.some(c => c.modules?.some((m: any) => m.id === depId));
+                                if (isAvailableCustom && !depsToSelect.includes(depId)) {
+                                    depsToSelect.push(depId);
+                                    addDependencies(depId);
+                                }
+                            });
+                        }
+                    }
+                };
+                addDependencies(moduleId);
+                return Array.from(new Set([...prev, ...depsToSelect]));
+            }
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
