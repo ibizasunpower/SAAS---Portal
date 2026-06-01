@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Container, ExternalLink, Trash2, Terminal, Globe, Database, Download } from "lucide-react";
+import { Container, ExternalLink, Trash2, Terminal, Globe, Database, Download, Calendar, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,8 @@ interface InstanceProps {
         labels: Record<string, string>;
         domain?: string;
         database?: string;
+        created_at?: string;
+        last_backup?: string | null;
     };
     onDelete: (instance: any) => void;
     onLogs: (instance: any) => void;
@@ -33,6 +35,16 @@ export function InstanceCard({ instance, onDelete, onLogs, onBackup }: InstanceP
 
     // Get Database
     const database = instance.database || 'N/A';
+
+    // Format date/time helpers
+    const formatDateTime = (iso?: string | null) => {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, {
+            year: 'numeric', month: 'short', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
 
     // Clean name odoo-client -> client
     const displayName = name.startsWith('odoo-') ? name.replace('odoo-', '') : name;
@@ -84,6 +96,18 @@ export function InstanceCard({ instance, onDelete, onLogs, onBackup }: InstanceP
                 <div className="flex justify-between text-sm">
                     <span className="text-zinc-500 dark:text-zinc-400">Container</span>
                     <span className="text-zinc-700 dark:text-zinc-200 truncate max-w-[140px]" title={name}>{name}</span>
+                </div>
+                <div className="border-t border-zinc-200 dark:border-zinc-700/50 pt-3 mt-1 space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5"><Calendar size={13} /> Created</span>
+                        <span className="text-zinc-600 dark:text-zinc-400 text-xs">{formatDateTime(instance.created_at)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                        <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5"><ShieldCheck size={13} /> Last Backup</span>
+                        <span className={`text-xs ${instance.last_backup ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-600 italic'}`}>
+                            {formatDateTime(instance.last_backup)}
+                        </span>
+                    </div>
                 </div>
             </div>
 

@@ -102,6 +102,14 @@ export async function GET(
 
         const safeDate = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `${databaseName}_${safeDate}.zip`;
+        const backupTimestamp = new Date().toISOString();
+
+        // Stamp last_backup on the registry record
+        try {
+            await registry.updateInstance(id, { last_backup: backupTimestamp });
+        } catch (regErr: any) {
+            await logger.warn('DATABASE', `Failed to update last_backup timestamp in registry`, { error: regErr.message, id });
+        }
 
         await logger.info('DATABASE', `Backup completed successfully for database: ${databaseName} as zip`, { id });
 

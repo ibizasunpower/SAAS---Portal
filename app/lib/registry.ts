@@ -20,6 +20,7 @@ export interface InstanceRecord {
     client_name: string; // Display name
     domain: string;
     version: string;
+    last_backup?: string;
 }
 
 export class InstanceRegistry {

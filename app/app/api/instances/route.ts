@@ -42,6 +42,8 @@ export async function GET() {
                 status: liveContainer ? liveContainer.Status : record.status,
                 ports,
                 created: Math.floor(new Date(record.created_at).getTime() / 1000),
+                created_at: record.created_at,
+                last_backup: record.last_backup || null,
                 domain: record.domain,
                 version: record.version,
                 database: record.database_name
