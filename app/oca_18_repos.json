@@ -1,0 +1,1157 @@
+[
+  {
+    "name": "OpenUpgrade",
+    "description": "Open source upgrade path for Odoo/OpenERP",
+    "url": "https://github.com/OCA/OpenUpgrade"
+  },
+  {
+    "name": "l10n-canada",
+    "description": "Odoo modules for Canada",
+    "url": "https://github.com/OCA/l10n-canada"
+  },
+  {
+    "name": "l10n-brazil",
+    "description": "Localização brasileira oficial do Odoo.",
+    "url": "https://github.com/OCA/l10n-brazil"
+  },
+  {
+    "name": "l10n-switzerland",
+    "description": "Odoo Swiss localization",
+    "url": "https://github.com/OCA/l10n-switzerland"
+  },
+  {
+    "name": "account-closing",
+    "description": "Odoo Accountant closing tools",
+    "url": "https://github.com/OCA/account-closing"
+  },
+  {
+    "name": "account-budgeting",
+    "description": null,
+    "url": "https://github.com/OCA/account-budgeting"
+  },
+  {
+    "name": "OCB",
+    "description": "Odoo Community Backports",
+    "url": "https://github.com/OCA/OCB"
+  },
+  {
+    "name": "account-analytic",
+    "description": "Odoo Account Analytic Related Addons",
+    "url": "https://github.com/OCA/account-analytic"
+  },
+  {
+    "name": "account-consolidation",
+    "description": "Odoo Account Consolidation Addons",
+    "url": "https://github.com/OCA/account-consolidation"
+  },
+  {
+    "name": "account-financial-tools",
+    "description": "Odoo Accountant Financial Tools and Utils",
+    "url": "https://github.com/OCA/account-financial-tools"
+  },
+  {
+    "name": "account-invoicing",
+    "description": "Odoo Invoicing Extension Addons",
+    "url": "https://github.com/OCA/account-invoicing"
+  },
+  {
+    "name": "account-invoice-reporting",
+    "description": "Odoo Invoicing reports",
+    "url": "https://github.com/OCA/account-invoice-reporting"
+  },
+  {
+    "name": "l10n-italy",
+    "description": "Odoo Italian localization",
+    "url": "https://github.com/OCA/l10n-italy"
+  },
+  {
+    "name": "account-fiscal-rule",
+    "description": "Odoo Taxes & Fiscal Rules Management",
+    "url": "https://github.com/OCA/account-fiscal-rule"
+  },
+  {
+    "name": "account-reconcile",
+    "description": "Odoo account reconciliation modules (statements, data completion...)",
+    "url": "https://github.com/OCA/account-reconcile"
+  },
+  {
+    "name": "bank-payment",
+    "description": "Odoo Electronic Payment",
+    "url": "https://github.com/OCA/bank-payment"
+  },
+  {
+    "name": "sale-workflow",
+    "description": "Odoo Sales, Workflow and Organization",
+    "url": "https://github.com/OCA/sale-workflow"
+  },
+  {
+    "name": "sale-financial",
+    "description": "Odoo Sale and Financial related Addons",
+    "url": "https://github.com/OCA/sale-financial"
+  },
+  {
+    "name": "crm",
+    "description": "Odoo CRM, Mail & Newsletter advanced features",
+    "url": "https://github.com/OCA/crm"
+  },
+  {
+    "name": "purchase-reporting",
+    "description": null,
+    "url": "https://github.com/OCA/purchase-reporting"
+  },
+  {
+    "name": "purchase-workflow",
+    "description": "Odoo Purchases, Workflow and Organization",
+    "url": "https://github.com/OCA/purchase-workflow"
+  },
+  {
+    "name": "vertical-hotel",
+    "description": "Odoo for Hotel Management",
+    "url": "https://github.com/OCA/vertical-hotel"
+  },
+  {
+    "name": "stock-logistics-tracking",
+    "description": "This repository contains modules around stock packages management",
+    "url": "https://github.com/OCA/stock-logistics-tracking"
+  },
+  {
+    "name": "delivery-carrier",
+    "description": "Odoo Carriers And Deliveries Management",
+    "url": "https://github.com/OCA/delivery-carrier"
+  },
+  {
+    "name": "sale-reporting",
+    "description": null,
+    "url": "https://github.com/OCA/sale-reporting"
+  },
+  {
+    "name": "stock-logistics-workflow",
+    "description": "Odoo Stock, Workflow and Organization",
+    "url": "https://github.com/OCA/stock-logistics-workflow"
+  },
+  {
+    "name": "stock-logistics-barcode",
+    "description": null,
+    "url": "https://github.com/OCA/stock-logistics-barcode"
+  },
+  {
+    "name": "stock-logistics-warehouse",
+    "description": "Odoo Warehouse Management Addons",
+    "url": "https://github.com/OCA/stock-logistics-warehouse"
+  },
+  {
+    "name": "stock-logistics-reporting",
+    "description": "Provides Odoo Logistics reporting modules",
+    "url": "https://github.com/OCA/stock-logistics-reporting"
+  },
+  {
+    "name": "hr",
+    "description": "Odoo Human Resources Addons",
+    "url": "https://github.com/OCA/hr"
+  },
+  {
+    "name": "e-commerce",
+    "description": "Odoo E-Commerce server automation addons",
+    "url": "https://github.com/OCA/e-commerce"
+  },
+  {
+    "name": "multi-company",
+    "description": null,
+    "url": "https://github.com/OCA/multi-company"
+  },
+  {
+    "name": "margin-analysis",
+    "description": "Odoo Financial Controlling (margin, costs, ...)",
+    "url": "https://github.com/OCA/margin-analysis"
+  },
+  {
+    "name": "knowledge",
+    "description": "Odoo Document & Knowledge Management",
+    "url": "https://github.com/OCA/knowledge"
+  },
+  {
+    "name": "timesheet",
+    "description": "Odoo Timesheet Management Addons",
+    "url": "https://github.com/OCA/timesheet"
+  },
+  {
+    "name": "product-attribute",
+    "description": "Odoo Product Attribute",
+    "url": "https://github.com/OCA/product-attribute"
+  },
+  {
+    "name": "geospatial",
+    "description": "Odoo and GIS",
+    "url": "https://github.com/OCA/geospatial"
+  },
+  {
+    "name": "product-variant",
+    "description": null,
+    "url": "https://github.com/OCA/product-variant"
+  },
+  {
+    "name": "product-kitting",
+    "description": "Odoo Kitting Addons",
+    "url": "https://github.com/OCA/product-kitting"
+  },
+  {
+    "name": "manufacture-reporting",
+    "description": null,
+    "url": "https://github.com/OCA/manufacture-reporting"
+  },
+  {
+    "name": "management-system",
+    "description": "Odoo for Management Systems (ISO, IEC, BS)",
+    "url": "https://github.com/OCA/management-system"
+  },
+  {
+    "name": "web",
+    "description": "Odoo web client UI related addons",
+    "url": "https://github.com/OCA/web"
+  },
+  {
+    "name": "manufacture",
+    "description": "Odoo Manufacturing Addons",
+    "url": "https://github.com/OCA/manufacture"
+  },
+  {
+    "name": "project",
+    "description": "Odoo Project Management and Services Company Addons",
+    "url": "https://github.com/OCA/project"
+  },
+  {
+    "name": "contract",
+    "description": null,
+    "url": "https://github.com/OCA/contract"
+  },
+  {
+    "name": "project-reporting",
+    "description": null,
+    "url": "https://github.com/OCA/project-reporting"
+  },
+  {
+    "name": "report-print-send",
+    "description": "Odoo Printing Services and Printer related addons",
+    "url": "https://github.com/OCA/report-print-send"
+  },
+  {
+    "name": "server-tools",
+    "description": "Tools for Odoo Administrators to improve some technical features on Odoo.",
+    "url": "https://github.com/OCA/server-tools"
+  },
+  {
+    "name": "program",
+    "description": null,
+    "url": "https://github.com/OCA/program"
+  },
+  {
+    "name": "vertical-edition",
+    "description": null,
+    "url": "https://github.com/OCA/vertical-edition"
+  },
+  {
+    "name": "webkit-tools",
+    "description": null,
+    "url": "https://github.com/OCA/webkit-tools"
+  },
+  {
+    "name": "vertical-travel",
+    "description": null,
+    "url": "https://github.com/OCA/vertical-travel"
+  },
+  {
+    "name": "connector",
+    "description": "Odoo generic connector framework (jobs queue, asynchronous tasks, channels)",
+    "url": "https://github.com/OCA/connector"
+  },
+  {
+    "name": "community-data-files",
+    "description": null,
+    "url": "https://github.com/OCA/community-data-files"
+  },
+  {
+    "name": "connector-lims",
+    "description": null,
+    "url": "https://github.com/OCA/connector-lims"
+  },
+  {
+    "name": "vertical-ngo",
+    "description": "Odoo for NGO's and humanitarian organization",
+    "url": "https://github.com/OCA/vertical-ngo"
+  },
+  {
+    "name": "connector-accountedge",
+    "description": "Odoo modules to connect with Account Edge (aka MyOB)",
+    "url": "https://github.com/OCA/connector-accountedge"
+  },
+  {
+    "name": "connector-sage",
+    "description": "Connector with Sage",
+    "url": "https://github.com/OCA/connector-sage"
+  },
+  {
+    "name": "account-payment",
+    "description": "Project supervised by the Banking PSC",
+    "url": "https://github.com/OCA/account-payment"
+  },
+  {
+    "name": "rma",
+    "description": "Odoo for Return Merchandise Authorization (RMA)",
+    "url": "https://github.com/OCA/rma"
+  },
+  {
+    "name": "commission",
+    "description": "Odoo Commission Management",
+    "url": "https://github.com/OCA/commission"
+  },
+  {
+    "name": "connector-prestashop",
+    "description": "Connect Odoo with Prestashop",
+    "url": "https://github.com/OCA/connector-prestashop"
+  },
+  {
+    "name": "connector-magento",
+    "description": "Connect Odoo with Magento",
+    "url": "https://github.com/OCA/connector-magento"
+  },
+  {
+    "name": "department",
+    "description": "[DEPRECATED since 9.0] Odoo Department segregation and management",
+    "url": "https://github.com/OCA/department"
+  },
+  {
+    "name": "l10n-france",
+    "description": "France Localization for Odoo",
+    "url": "https://github.com/OCA/l10n-france"
+  },
+  {
+    "name": "connector-cmis",
+    "description": "CMIS Connector",
+    "url": "https://github.com/OCA/connector-cmis"
+  },
+  {
+    "name": "l10n-spain",
+    "description": "Odoo Spain Localization",
+    "url": "https://github.com/OCA/l10n-spain"
+  },
+  {
+    "name": "reporting-engine",
+    "description": "Odoo Alternative Reporting Engine",
+    "url": "https://github.com/OCA/reporting-engine"
+  },
+  {
+    "name": "connector-redmine",
+    "description": "Connector Redmine (http://redmine.org)",
+    "url": "https://github.com/OCA/connector-redmine"
+  },
+  {
+    "name": "account-financial-reporting",
+    "description": "Financial reports for Odoo",
+    "url": "https://github.com/OCA/account-financial-reporting"
+  },
+  {
+    "name": "connector-ecommerce",
+    "description": "Generic module used on Odoo for E-Commerce industry",
+    "url": "https://github.com/OCA/connector-ecommerce"
+  },
+  {
+    "name": "partner-contact",
+    "description": "Odoo Partner and Contact related addons",
+    "url": "https://github.com/OCA/partner-contact"
+  },
+  {
+    "name": "vertical-isp",
+    "description": "Odoo Modules for Internet Service Providers",
+    "url": "https://github.com/OCA/vertical-isp"
+  },
+  {
+    "name": "vertical-medical",
+    "description": "Open Source Healthcare System for Odoo",
+    "url": "https://github.com/OCA/vertical-medical"
+  },
+  {
+    "name": "l10n-luxemburg",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-luxemburg"
+  },
+  {
+    "name": "l10n-belgium",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-belgium"
+  },
+  {
+    "name": "website",
+    "description": "Odoo website builder addons",
+    "url": "https://github.com/OCA/website"
+  },
+  {
+    "name": "vertical-construction",
+    "description": "Odoo for Construction Company",
+    "url": "https://github.com/OCA/vertical-construction"
+  },
+  {
+    "name": "l10n-mexico",
+    "description": "Mexican Localization.",
+    "url": "https://github.com/OCA/l10n-mexico"
+  },
+  {
+    "name": "l10n-colombia",
+    "description": "Odoo modules for Colombia",
+    "url": "https://github.com/OCA/l10n-colombia"
+  },
+  {
+    "name": "l10n-venezuela",
+    "description": "Odoo modules for Venezuela",
+    "url": "https://github.com/OCA/l10n-venezuela"
+  },
+  {
+    "name": "pos",
+    "description": null,
+    "url": "https://github.com/OCA/pos"
+  },
+  {
+    "name": "l10n-argentina",
+    "description": "Odoo modules for Argentina",
+    "url": "https://github.com/OCA/l10n-argentina"
+  },
+  {
+    "name": "connector-interfaces",
+    "description": "Odoo Generic Connector for ODBC, .CSV,...",
+    "url": "https://github.com/OCA/connector-interfaces"
+  },
+  {
+    "name": "l10n-germany",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-germany"
+  },
+  {
+    "name": "l10n-netherlands",
+    "description": "Odoo Dutch Localization",
+    "url": "https://github.com/OCA/l10n-netherlands"
+  },
+  {
+    "name": "l10n-finland",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-finland"
+  },
+  {
+    "name": "l10n-costa-rica",
+    "description": "Odoo modules for Costa-Rica",
+    "url": "https://github.com/OCA/l10n-costa-rica"
+  },
+  {
+    "name": "vertical-community",
+    "description": "Odoo for Communities Verticalization",
+    "url": "https://github.com/OCA/vertical-community"
+  },
+  {
+    "name": "connector-telephony",
+    "description": "Odoo modules for telephony integration",
+    "url": "https://github.com/OCA/connector-telephony"
+  },
+  {
+    "name": "connector-salesforce",
+    "description": "Connect Salesforce with Odoo",
+    "url": "https://github.com/OCA/connector-salesforce"
+  },
+  {
+    "name": "donation",
+    "description": null,
+    "url": "https://github.com/OCA/donation"
+  },
+  {
+    "name": "stock-logistics-transport",
+    "description": "Transport management in Odoo ",
+    "url": "https://github.com/OCA/stock-logistics-transport"
+  },
+  {
+    "name": "vertical-abbey",
+    "description": null,
+    "url": "https://github.com/OCA/vertical-abbey"
+  },
+  {
+    "name": "l10n-portugal",
+    "description": "Odoo Portuguese localization",
+    "url": "https://github.com/OCA/l10n-portugal"
+  },
+  {
+    "name": "bank-statement-import",
+    "description": "Bank Import Addons",
+    "url": "https://github.com/OCA/bank-statement-import"
+  },
+  {
+    "name": "vertical-agriculture",
+    "description": "Verticalization of Odoo for farms and agroindustries",
+    "url": "https://github.com/OCA/vertical-agriculture"
+  },
+  {
+    "name": "l10n-romania",
+    "description": "Romanian Localization for Odoo",
+    "url": "https://github.com/OCA/l10n-romania"
+  },
+  {
+    "name": "dotnet",
+    "description": "This repository holds all addons written in dotnet",
+    "url": "https://github.com/OCA/dotnet"
+  },
+  {
+    "name": "l10n-taiwan",
+    "description": "Taiwanese localization",
+    "url": "https://github.com/OCA/l10n-taiwan"
+  },
+  {
+    "name": "l10n-china",
+    "description": "Chinese localization of Odoo",
+    "url": "https://github.com/OCA/l10n-china"
+  },
+  {
+    "name": "l10n-norway",
+    "description": "The Norwegian localization for Odoo",
+    "url": "https://github.com/OCA/l10n-norway"
+  },
+  {
+    "name": "l10n-india",
+    "description": "Odoo Localization for India",
+    "url": "https://github.com/OCA/l10n-india"
+  },
+  {
+    "name": "event",
+    "description": "Event Management addons",
+    "url": "https://github.com/OCA/event"
+  },
+  {
+    "name": "l10n-ireland",
+    "description": "Odoo Localization for Ireland",
+    "url": "https://github.com/OCA/l10n-ireland"
+  },
+  {
+    "name": "survey",
+    "description": "Survey addons",
+    "url": "https://github.com/OCA/survey"
+  },
+  {
+    "name": "l10n-usa",
+    "description": "US Localization of Odoo",
+    "url": "https://github.com/OCA/l10n-usa"
+  },
+  {
+    "name": "social",
+    "description": "Addons concerning odoo's social ERP features and messaging in general",
+    "url": "https://github.com/OCA/social"
+  },
+  {
+    "name": "connector-woocommerce",
+    "description": null,
+    "url": "https://github.com/OCA/connector-woocommerce"
+  },
+  {
+    "name": "l10n-united-kingdom",
+    "description": "Odoo Localization for United Kingdom",
+    "url": "https://github.com/OCA/l10n-united-kingdom"
+  },
+  {
+    "name": "connector-odoo2odoo",
+    "description": "connector-odoo2odoo. Intercompany process, based on odoo-connector",
+    "url": "https://github.com/OCA/connector-odoo2odoo"
+  },
+  {
+    "name": "vertical-association",
+    "description": "Odoo addons for membership related tasks",
+    "url": "https://github.com/OCA/vertical-association"
+  },
+  {
+    "name": "l10n-iran",
+    "description": "Odoo Localization for Iran",
+    "url": "https://github.com/OCA/l10n-iran"
+  },
+  {
+    "name": "l10n-peru",
+    "description": "Peruvian Localization",
+    "url": "https://github.com/OCA/l10n-peru"
+  },
+  {
+    "name": "webhook",
+    "description": "Modules with community help modules: webhook_* (gitlab, bitbucket... other webhook consumer) ",
+    "url": "https://github.com/OCA/webhook"
+  },
+  {
+    "name": "l10n-ecuador",
+    "description": "Odoo Localization for Ecuador",
+    "url": "https://github.com/OCA/l10n-ecuador"
+  },
+  {
+    "name": "business-requirement",
+    "description": "Business Requirements Management via Odoo",
+    "url": "https://github.com/OCA/business-requirement"
+  },
+  {
+    "name": "l10n-morocco",
+    "description": "Moroccan Localization",
+    "url": "https://github.com/OCA/l10n-morocco"
+  },
+  {
+    "name": "l10n-turkey",
+    "description": "Turkish Localization Project",
+    "url": "https://github.com/OCA/l10n-turkey"
+  },
+  {
+    "name": "vertical-education",
+    "description": "Odoo modules for schools, universities and other education organizations",
+    "url": "https://github.com/OCA/vertical-education"
+  },
+  {
+    "name": "l10n-indonesia",
+    "description": "Indonesian Localization Project",
+    "url": "https://github.com/OCA/l10n-indonesia"
+  },
+  {
+    "name": "l10n-ethiopia",
+    "description": "Ethiopian Localization Project",
+    "url": "https://github.com/OCA/l10n-ethiopia"
+  },
+  {
+    "name": "l10n-cambodia",
+    "description": "Odoo Cambodian Localization",
+    "url": "https://github.com/OCA/l10n-cambodia"
+  },
+  {
+    "name": "oca-custom",
+    "description": "Custom Module for OCA Instance",
+    "url": "https://github.com/OCA/oca-custom"
+  },
+  {
+    "name": "operating-unit",
+    "description": "Manage Operating Units in Odoo",
+    "url": "https://github.com/OCA/operating-unit"
+  },
+  {
+    "name": "infrastructure",
+    "description": "Odoo modules related to the management of Domain Name Server services within network infrastructure",
+    "url": "https://github.com/OCA/infrastructure"
+  },
+  {
+    "name": "l10n-slovenia",
+    "description": "Slovenian Localization Project",
+    "url": "https://github.com/OCA/l10n-slovenia"
+  },
+  {
+    "name": "intrastat-extrastat",
+    "description": null,
+    "url": "https://github.com/OCA/intrastat-extrastat"
+  },
+  {
+    "name": "website-cms",
+    "description": "CMS features for Odoo website",
+    "url": "https://github.com/OCA/website-cms"
+  },
+  {
+    "name": "interface-git",
+    "description": "Tools to interact with github from Odoo",
+    "url": "https://github.com/OCA/interface-git"
+  },
+  {
+    "name": "edi",
+    "description": null,
+    "url": "https://github.com/OCA/edi"
+  },
+  {
+    "name": "l10n-chile",
+    "description": "Odoo Chilean Localization",
+    "url": "https://github.com/OCA/l10n-chile"
+  },
+  {
+    "name": "queue",
+    "description": "Asynchronous Job Queue",
+    "url": "https://github.com/OCA/queue"
+  },
+  {
+    "name": "connector-lengow",
+    "description": null,
+    "url": "https://github.com/OCA/connector-lengow"
+  },
+  {
+    "name": "l10n-vietnam",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-vietnam"
+  },
+  {
+    "name": "vertical-realestate",
+    "description": "Odoo modules for real estate business",
+    "url": "https://github.com/OCA/vertical-realestate"
+  },
+  {
+    "name": "maintenance",
+    "description": "Odoo modules for businesses that implies maintenance tasks",
+    "url": "https://github.com/OCA/maintenance"
+  },
+  {
+    "name": "connector-jira",
+    "description": null,
+    "url": "https://github.com/OCA/connector-jira"
+  },
+  {
+    "name": "l10n-thailand",
+    "description": "Thai localization",
+    "url": "https://github.com/OCA/l10n-thailand"
+  },
+  {
+    "name": "mis-builder",
+    "description": "Management Information System reports for Odoo: easily build super fast, beautiful, custom reports such as P&L, Balance Sheets and more.",
+    "url": "https://github.com/OCA/mis-builder"
+  },
+  {
+    "name": "apps-store",
+    "description": "OCA Apps store module repository",
+    "url": "https://github.com/OCA/apps-store"
+  },
+  {
+    "name": "server-ux",
+    "description": null,
+    "url": "https://github.com/OCA/server-ux"
+  },
+  {
+    "name": "server-auth",
+    "description": null,
+    "url": "https://github.com/OCA/server-auth"
+  },
+  {
+    "name": "server-backend",
+    "description": null,
+    "url": "https://github.com/OCA/server-backend"
+  },
+  {
+    "name": "server-brand",
+    "description": null,
+    "url": "https://github.com/OCA/server-brand"
+  },
+  {
+    "name": "calendar",
+    "description": null,
+    "url": "https://github.com/OCA/calendar"
+  },
+  {
+    "name": "website-themes",
+    "description": "Website themes for Odoo",
+    "url": "https://github.com/OCA/website-themes"
+  },
+  {
+    "name": "l10n-japan",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-japan"
+  },
+  {
+    "name": "project-agile",
+    "description": null,
+    "url": "https://github.com/OCA/project-agile"
+  },
+  {
+    "name": "connector-infor",
+    "description": "Odoo modules to integrate with Infor",
+    "url": "https://github.com/OCA/connector-infor"
+  },
+  {
+    "name": "credit-control",
+    "description": "Odoo modules for the customer credit control",
+    "url": "https://github.com/OCA/credit-control"
+  },
+  {
+    "name": "l10n-croatia",
+    "description": "Odoo Croatian Localization",
+    "url": "https://github.com/OCA/l10n-croatia"
+  },
+  {
+    "name": "server-env",
+    "description": "Tools to manage environment-dependent configuration",
+    "url": "https://github.com/OCA/server-env"
+  },
+  {
+    "name": "ddmrp",
+    "description": null,
+    "url": "https://github.com/OCA/ddmrp"
+  },
+  {
+    "name": "currency",
+    "description": " Odoo Currency related Addons (crypto currencies, rate conversion, integrations with third party applications,...)",
+    "url": "https://github.com/OCA/currency"
+  },
+  {
+    "name": "field-service",
+    "description": "Field Service Management",
+    "url": "https://github.com/OCA/field-service"
+  },
+  {
+    "name": "data-protection",
+    "description": "Data Protection",
+    "url": "https://github.com/OCA/data-protection"
+  },
+  {
+    "name": "l10n-belarus",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-belarus"
+  },
+  {
+    "name": "l10n-poland",
+    "description": "Odoo Polish Localization",
+    "url": "https://github.com/OCA/l10n-poland"
+  },
+  {
+    "name": "l10n-russia",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-russia"
+  },
+  {
+    "name": "l10n-estonia",
+    "description": null,
+    "url": "https://github.com/OCA/l10n-estonia"
+  },
+  {
+    "name": "iot",
+    "description": "Internet of Things (IoT)",
+    "url": "https://github.com/OCA/iot"
+  },
+  {
+    "name": "rest-framework",
+    "description": null,
+    "url": "https://github.com/OCA/rest-framework"
+  },
+  {
+    "name": "l10n-greece",
+    "description": "Odoo Greek Localization",
+    "url": "https://github.com/OCA/l10n-greece"
+  },
+  {
+    "name": "connector-spscommerce",
+    "description": "Connector SPS Commerce",
+    "url": "https://github.com/OCA/connector-spscommerce"
+  },
+  {
+    "name": "search-engine",
+    "description": null,
+    "url": "https://github.com/OCA/search-engine"
+  },
+  {
+    "name": "l10n-uruguay",
+    "description": "Odoo Localization for Uruguay",
+    "url": "https://github.com/OCA/l10n-uruguay"
+  },
+  {
+    "name": "storage",
+    "description": null,
+    "url": "https://github.com/OCA/storage"
+  },
+  {
+    "name": "mis-builder-contrib",
+    "description": "Modules that provide additional features on top of MIS Builder. A kind of incubator for MIS Builder features that may land in the core in the future.",
+    "url": "https://github.com/OCA/mis-builder-contrib"
+  },
+  {
+    "name": "l10n-austria",
+    "description": "Odoo Austria Localization",
+    "url": "https://github.com/OCA/l10n-austria"
+  },
+  {
+    "name": "odoo-pim",
+    "description": null,
+    "url": "https://github.com/OCA/odoo-pim"
+  },
+  {
+    "name": "payroll",
+    "description": "Odoo modules for payroll management",
+    "url": "https://github.com/OCA/payroll"
+  },
+  {
+    "name": "brand",
+    "description": "Manage brands for products and companies",
+    "url": "https://github.com/OCA/brand"
+  },
+  {
+    "name": "wms",
+    "description": "Warehouse Management System for advance logistic with Odoo",
+    "url": "https://github.com/OCA/wms"
+  },
+  {
+    "name": "l10n-ukraine",
+    "description": "Ukrainian localization",
+    "url": "https://github.com/OCA/l10n-ukraine"
+  },
+  {
+    "name": "helpdesk",
+    "description": "Odoo modules for managing a HelpDesk system",
+    "url": "https://github.com/OCA/helpdesk"
+  },
+  {
+    "name": "product-pack",
+    "description": "Odoo modules related to product packs",
+    "url": "https://github.com/OCA/product-pack"
+  },
+  {
+    "name": "hr-expense",
+    "description": "Human Resources Expenses OCA modules for Odoo",
+    "url": "https://github.com/OCA/hr-expense"
+  },
+  {
+    "name": "hr-attendance",
+    "description": "HR Attendance OCA modules for Odoo",
+    "url": "https://github.com/OCA/hr-attendance"
+  },
+  {
+    "name": "l10n-macedonia",
+    "description": "Odoo Macedonian localization",
+    "url": "https://github.com/OCA/l10n-macedonia"
+  },
+  {
+    "name": "hr-holidays",
+    "description": "Human Resources Holidays OCA modules for Odoo",
+    "url": "https://github.com/OCA/hr-holidays"
+  },
+  {
+    "name": "fleet",
+    "description": "Odoo fleet management modules",
+    "url": "https://github.com/OCA/fleet"
+  },
+  {
+    "name": "dms",
+    "description": "Odoo modules for a Document Management System",
+    "url": "https://github.com/OCA/dms"
+  },
+  {
+    "name": "role-policy",
+    "description": null,
+    "url": "https://github.com/OCA/role-policy"
+  },
+  {
+    "name": "pms",
+    "description": "Property Management System on Odoo",
+    "url": "https://github.com/OCA/pms"
+  },
+  {
+    "name": "vertical-rental",
+    "description": null,
+    "url": "https://github.com/OCA/vertical-rental"
+  },
+  {
+    "name": "repair",
+    "description": null,
+    "url": "https://github.com/OCA/repair"
+  },
+  {
+    "name": "product-configurator",
+    "description": "Advanced Product Configurator (from the original Pledra project https://github.com/pledra/odoo-product-configurator)",
+    "url": "https://github.com/OCA/product-configurator"
+  },
+  {
+    "name": "cooperative",
+    "description": null,
+    "url": "https://github.com/OCA/cooperative"
+  },
+  {
+    "name": "sale-promotion",
+    "description": null,
+    "url": "https://github.com/OCA/sale-promotion"
+  },
+  {
+    "name": "shift-planning",
+    "description": null,
+    "url": "https://github.com/OCA/shift-planning"
+  },
+  {
+    "name": "vertical-cooperative-supermarket",
+    "description": null,
+    "url": "https://github.com/OCA/vertical-cooperative-supermarket"
+  },
+  {
+    "name": "web-api",
+    "description": null,
+    "url": "https://github.com/OCA/web-api"
+  },
+  {
+    "name": "pwa-builder",
+    "description": null,
+    "url": "https://github.com/OCA/pwa-builder"
+  },
+  {
+    "name": "wallet",
+    "description": null,
+    "url": "https://github.com/OCA/wallet"
+  },
+  {
+    "name": "stock-logistics-availability",
+    "description": "This repository contains modules to provide more information about product stock availability in terms of quantities (immediately usable, potential, unreserved ones, ...).",
+    "url": "https://github.com/OCA/stock-logistics-availability"
+  },
+  {
+    "name": "stock-logistics-request",
+    "description": "This repository contains modules to provide another way of creating stock movements. Provided as a dedicated application, users will be able to create their stock needs by product and location.",
+    "url": "https://github.com/OCA/stock-logistics-request"
+  },
+  {
+    "name": "spreadsheet",
+    "description": null,
+    "url": "https://github.com/OCA/spreadsheet"
+  },
+  {
+    "name": "stock-logistics-orderpoint",
+    "description": "This repository contains modules to extend reordering rules (available on warehouses locations) functionalities.",
+    "url": "https://github.com/OCA/stock-logistics-orderpoint"
+  },
+  {
+    "name": "agreement",
+    "description": null,
+    "url": "https://github.com/OCA/agreement"
+  },
+  {
+    "name": "sale-channel",
+    "description": null,
+    "url": "https://github.com/OCA/sale-channel"
+  },
+  {
+    "name": "stock-logistics-interfaces",
+    "description": "stock-logistics-interfaces",
+    "url": "https://github.com/OCA/stock-logistics-interfaces"
+  },
+  {
+    "name": "rest-api",
+    "description": null,
+    "url": "https://github.com/OCA/rest-api"
+  },
+  {
+    "name": "edi-framework",
+    "description": null,
+    "url": "https://github.com/OCA/edi-framework"
+  },
+  {
+    "name": "module-composition-analysis",
+    "description": "Collect and explore data from Odoo modules repositories",
+    "url": "https://github.com/OCA/module-composition-analysis"
+  },
+  {
+    "name": "resource",
+    "description": "resource",
+    "url": "https://github.com/OCA/resource"
+  },
+  {
+    "name": "stock-weighing",
+    "description": "stock-weighing",
+    "url": "https://github.com/OCA/stock-weighing"
+  },
+  {
+    "name": "sign",
+    "description": null,
+    "url": "https://github.com/OCA/sign"
+  },
+  {
+    "name": "l10n-bulgaria",
+    "description": "l10n-bulgaria",
+    "url": "https://github.com/OCA/l10n-bulgaria"
+  },
+  {
+    "name": "automation",
+    "description": "automation",
+    "url": "https://github.com/OCA/automation"
+  },
+  {
+    "name": "web-api-contrib",
+    "description": "web-api-contrib",
+    "url": "https://github.com/OCA/web-api-contrib"
+  },
+  {
+    "name": "mail",
+    "description": "mail",
+    "url": "https://github.com/OCA/mail"
+  },
+  {
+    "name": "stock-logistics-release-channel",
+    "description": "stock-logistics-release-channel",
+    "url": "https://github.com/OCA/stock-logistics-release-channel"
+  },
+  {
+    "name": "e-learning",
+    "description": "e-learning",
+    "url": "https://github.com/OCA/e-learning"
+  },
+  {
+    "name": "stock-logistics-reservation",
+    "description": "stock-logistics-reservation",
+    "url": "https://github.com/OCA/stock-logistics-reservation"
+  },
+  {
+    "name": "stock-logistics-shopfloor",
+    "description": "stock-logistics-shopfloor",
+    "url": "https://github.com/OCA/stock-logistics-shopfloor"
+  },
+  {
+    "name": "sale-blanket",
+    "description": "sale-blanket",
+    "url": "https://github.com/OCA/sale-blanket"
+  },
+  {
+    "name": "sale-prebook",
+    "description": "sale-prebook",
+    "url": "https://github.com/OCA/sale-prebook"
+  },
+  {
+    "name": "shopfloor-app",
+    "description": "shopfloor-app",
+    "url": "https://github.com/OCA/shopfloor-app"
+  },
+  {
+    "name": "stock-logistics-putaway",
+    "description": "stock-logistics-putaway",
+    "url": "https://github.com/OCA/stock-logistics-putaway"
+  },
+  {
+    "name": "mass-mailing",
+    "description": "mass-mailing",
+    "url": "https://github.com/OCA/mass-mailing"
+  },
+  {
+    "name": "crowdfunding",
+    "description": "crowdfunding",
+    "url": "https://github.com/OCA/crowdfunding"
+  },
+  {
+    "name": "bank-payment-alternative",
+    "description": "Bank Payment - Alternative approach based on Odoo native payment methods",
+    "url": "https://github.com/OCA/bank-payment-alternative"
+  },
+  {
+    "name": "edi-voxel",
+    "description": "edi-voxel",
+    "url": "https://github.com/OCA/edi-voxel"
+  },
+  {
+    "name": "edi-ediversa",
+    "description": "edi-ediversa",
+    "url": "https://github.com/OCA/edi-ediversa"
+  },
+  {
+    "name": "cim",
+    "description": "cim",
+    "url": "https://github.com/OCA/cim"
+  },
+  {
+    "name": "ai",
+    "description": "ai",
+    "url": "https://github.com/OCA/ai"
+  },
+  {
+    "name": "shoppingfeed",
+    "description": "shoppingfeed",
+    "url": "https://github.com/OCA/shoppingfeed"
+  },
+  {
+    "name": "version-control-platform",
+    "description": null,
+    "url": "https://github.com/OCA/version-control-platform"
+  },
+  {
+    "name": "l10n-paraguay",
+    "description": "l10n-paraguay",
+    "url": "https://github.com/OCA/l10n-paraguay"
+  },
+  {
+    "name": "route-planning",
+    "description": "route-planning",
+    "url": "https://github.com/OCA/route-planning"
+  }
+]
