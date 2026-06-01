@@ -52,6 +52,10 @@ export default function Dashboard() {
     setDeleteInstance(instance);
   };
 
+  const handleBackup = (instance: any) => {
+    window.location.href = `/api/instances/${instance.id}/backup`;
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteInstance) return;
 
@@ -172,6 +176,7 @@ export default function Dashboard() {
               onRefresh={fetchInstances}
               onLogs={handleLogs}
               onDelete={handleDeleteParams}
+              onBackup={handleBackup}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,6 +186,7 @@ export default function Dashboard() {
                   instance={inst}
                   onLogs={handleLogs}
                   onDelete={handleDeleteParams}
+                  onBackup={handleBackup}
                 />
               ))}
               {instances.length === 0 && (

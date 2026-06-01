@@ -6,7 +6,8 @@ import {
     Trash2,
     ExternalLink,
     ArrowUpDown,
-    Terminal
+    Terminal,
+    Download
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -27,12 +28,13 @@ interface InstanceTableProps {
     onRefresh: () => void;
     onLogs: (instance: Instance) => void;
     onDelete: (instance: Instance) => void;
+    onBackup: (instance: Instance) => void;
 }
 
 type SortKey = "name" | "port" | "state";
 type SortDirection = "asc" | "desc";
 
-export default function InstanceTable({ instances, onRefresh, onLogs, onDelete }: InstanceTableProps) {
+export default function InstanceTable({ instances, onRefresh, onLogs, onDelete, onBackup }: InstanceTableProps) {
     const [sortKey, setSortKey] = useState<SortKey>("name");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -172,6 +174,14 @@ export default function InstanceTable({ instances, onRefresh, onLogs, onDelete }
                                                     title="View Logs"
                                                 >
                                                     <Terminal className="w-4 h-4" />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => onBackup(instance)}
+                                                    className="p-2 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 rounded-lg transition-colors"
+                                                    title="Backup & Download Database"
+                                                >
+                                                    <Download className="w-4 h-4" />
                                                 </button>
 
                                                 <button

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Container, ExternalLink, Trash2, Terminal, Globe, Database } from "lucide-react";
+import { Container, ExternalLink, Trash2, Terminal, Globe, Database, Download } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +19,10 @@ interface InstanceProps {
     };
     onDelete: (instance: any) => void;
     onLogs: (instance: any) => void;
+    onBackup: (instance: any) => void;
 }
 
-export function InstanceCard({ instance, onDelete, onLogs }: InstanceProps) {
+export function InstanceCard({ instance, onDelete, onLogs, onBackup }: InstanceProps) {
     const name = (instance.names[0] || "Unknown").replace('/', '');
     const isRunning = instance.state === 'running';
     // Find public port
@@ -93,6 +94,14 @@ export function InstanceCard({ instance, onDelete, onLogs }: InstanceProps) {
                     title="View Logs"
                 >
                     <Terminal size={18} />
+                </button>
+
+                <button
+                    onClick={() => onBackup(instance)}
+                    className="p-2.5 text-zinc-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors border border-transparent"
+                    title="Backup & Download Database"
+                >
+                    <Download size={18} />
                 </button>
 
                 {isRunning && port !== 'N/A' ? (
