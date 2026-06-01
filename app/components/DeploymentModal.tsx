@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Server, Globe, Box } from "lucide-react";
+import { X, Loader2, Server, Globe, Box, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DeploymentModalProps {
@@ -19,7 +19,8 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         domain: "",
     });
     const [categories, setCategories] = useState<any[]>([]);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+    const [selectedModules, setSelectedModules] = useState<string[]>([]);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -40,11 +41,32 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
     if (!isOpen) return null;
 
-    const handleCategoryChange = (categoryId: string) => {
-        setSelectedCategories(prev => 
+    const toggleExpand = (categoryId: string) => {
+        setExpandedCategories(prev => 
             prev.includes(categoryId)
                 ? prev.filter(id => id !== categoryId)
                 : [...prev, categoryId]
+        );
+    };
+
+    const handleCategoryChange = (cat: any) => {
+        const moduleIds = cat.modules.map((m: any) => m.id);
+        const allSelected = moduleIds.every((id: string) => selectedModules.includes(id));
+        
+        if (allSelected) {
+            // Deselect all
+            setSelectedModules(prev => prev.filter(id => !moduleIds.includes(id)));
+        } else {
+            // Select all
+            setSelectedModules(prev => Array.from(new Set([...prev, ...moduleIds])));
+        }
+    };
+
+    const handleModuleChange = (moduleId: string) => {
+        setSelectedModules(prev => 
+            prev.includes(moduleId)
+                ? prev.filter(id => id !== moduleId)
+                : [...prev, moduleId]
         );
     };
 
@@ -59,7 +81,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...formData,
-                    selected_categories: selectedCategories
+                    selected_modules: selectedModules
                 }),
             });
 
@@ -149,25 +171,71 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                     {categories.length > 0 && (
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                                <Box size={14} /> Pre-installed Modules (Groups)
+                                <Box size={14} /> Pre-installed Modules (Custom selection)
                             </label>
-                            <div className="space-y-2 bg-zinc-900 border border-zinc-800 rounded-lg p-3 max-h-48 overflow-y-auto">
-                                {categories.map(cat => (
-                                    <label key={cat.id} className="flex items-start gap-3 cursor-pointer group p-1.5 rounded hover:bg-zinc-800/50 transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            className="mt-1 rounded border-zinc-700 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4"
-                                            checked={selectedCategories.includes(cat.id)}
-                                            onChange={() => handleCategoryChange(cat.id)}
-                                        />
-                                        <div className="flex-1">
-                                            <div className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">{cat.name}</div>
-                                            {cat.description && (
-                                                <div className="text-[10px] text-zinc-500">{cat.description}</div>
+                            <div className="space-y-3 bg-zinc-900 border border-zinc-800 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                {categories.map(cat => {
+                                    const moduleIds = cat.modules ? cat.modules.map((m: any) => m.id) : [];
+                                    const isExpanded = expandedCategories.includes(cat.id);
+                                    const allSelected = moduleIds.length > 0 && moduleIds.every((id: string) => selectedModules.includes(id));
+                                    const someSelected = !allSelected && moduleIds.some((id: string) => selectedModules.includes(id));
+
+                                    return (
+                                        <div key={cat.id} className="space-y-1.5 border-b border-zinc-800 last:border-0 pb-2.5 last:pb-0">
+                                            <div className="flex items-center justify-between">
+                                                <label className="flex items-start gap-3 cursor-pointer group py-0.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        className={cn(
+                                                            "mt-1 rounded border-zinc-700 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4",
+                                                            someSelected && "opacity-60"
+                                                        )}
+                                                        checked={allSelected}
+                                                        onChange={() => handleCategoryChange(cat)}
+                                                    />
+                                                    <div>
+                                                        <div className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">{cat.name}</div>
+                                                        {cat.description && (
+                                                            <div className="text-[10px] text-zinc-500">{cat.description}</div>
+                                                        )}
+                                                    </div>
+                                                </label>
+                                                
+                                                {moduleIds.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleExpand(cat.id)}
+                                                        className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors flex items-center gap-1 text-[10px]"
+                                                    >
+                                                        {isExpanded ? (
+                                                            <>Hide ({moduleIds.length}) <ChevronDown size={14} /></>
+                                                        ) : (
+                                                            <>Show ({moduleIds.length}) <ChevronRight size={14} /></>
+                                                        )}
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {isExpanded && cat.modules && (
+                                                <div className="pl-7 grid grid-cols-1 gap-2 pt-1.5 border-l border-zinc-800 ml-2 animate-in slide-in-from-top-1 duration-150">
+                                                    {cat.modules.map((mod: any) => (
+                                                        <label key={mod.id} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="rounded border-zinc-800 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-3.5 w-3.5"
+                                                                checked={selectedModules.includes(mod.id)}
+                                                                onChange={() => handleModuleChange(mod.id)}
+                                                            />
+                                                            <span className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors font-medium">
+                                                                {mod.name} <span className="text-[9px] text-zinc-650 font-mono">({mod.id})</span>
+                                                            </span>
+                                                        </label>
+                                                    ))}
+                                                </div>
                                             )}
                                         </div>
-                                    </label>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

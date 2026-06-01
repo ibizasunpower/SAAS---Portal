@@ -12,11 +12,12 @@ export async function GET() {
 
         const config = await fs.readJson(configPath);
         
-        // Return categories formatted for checkboxes (id, name, description)
+        // Return categories formatted for checkboxes (id, name, description, modules)
         const categories = Object.keys(config).map(key => ({
             id: key,
             name: config[key].name,
-            description: config[key].description
+            description: config[key].description,
+            modules: config[key].modules
         }));
 
         return NextResponse.json(categories);
