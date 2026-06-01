@@ -83,34 +83,91 @@ async function run() {
                 const itemPath = path.join(scanPath, item);
                 const stat = await fs.stat(itemPath);
 
-                if (stat.isDirectory()) {
-                    // Check if it's an Odoo module folder
-                    const manifestPath = path.join(itemPath, '__manifest__.py');
-                    if (await fs.pathExists(manifestPath)) {
-                        const manifest = parseManifest(manifestPath);
-                        if (manifest) {
-                            const catKey = slugify(manifest.category);
-                            
-                            // Initialize category if it doesn't exist
-                            if (!config[version][catKey]) {
-                                config[version][catKey] = {
-                                    name: manifest.category,
-                                    description: `Odoo ${manifest.category} modules.`,
-                                    modules: []
-                                };
-                            }
+                if (!stat.isDirectory()) continue;
 
-                            // Avoid duplicates
-                            const exists = config[version][catKey].modules.some(m => m.id === item);
-                            if (!exists) {
-                                config[version][catKey].modules.push({
-                                    id: item,
-                                    name: manifest.name,
-                                    description: manifest.summary
-                                });
-                                moduleCount++;
+                // Check if it's an Odoo module directly (Level 1)
+                const manifestPath = path.join(itemPath, '__manifest__.py');
+                if (await fs.pathExists(manifestPath)) {
+                    const manifest = parseManifest(manifestPath);
+                    if (manifest) {
+                        const catKey = slugify(manifest.category);
+                        if (!config[version][catKey]) {
+                            config[version][catKey] = {
+                                name: manifest.category,
+                                description: `Odoo ${manifest.category} modules.`,
+                                modules: []
+                            };
+                        }
+                        const exists = config[version][catKey].modules.some(m => m.id === item);
+                        if (!exists) {
+                            config[version][catKey].modules.push({
+                                id: item,
+                                name: manifest.name,
+                                description: manifest.summary
+                            });
+                            moduleCount++;
+                        }
+                    }
+                } else {
+                    // Check if it's a repository containing nested Odoo modules (Level 2)
+                    // E.g. search inside `scanPath/item/*`
+                    try {
+                        const subItems = await fs.readdir(itemPath);
+                        for (const subItem of subItems) {
+                            const subItemPath = path.join(itemPath, subItem);
+                            const subStat = await fs.stat(subItemPath);
+
+                            if (subStat.isDirectory()) {
+                                const subManifestPath = path.join(subItemPath, '__manifest__.py');
+                                if (await fs.pathExists(subManifestPath)) {
+                                    const manifest = parseManifest(subManifestPath);
+                                    if (manifest) {
+                                        // Index the nested module
+                                        const catKey = slugify(manifest.category);
+                                        if (!config[version][catKey]) {
+                                            config[version][catKey] = {
+                                                name: manifest.category,
+                                                description: `Odoo ${manifest.category} modules.`,
+                                                modules: []
+                                            };
+                                        }
+                                        const exists = config[version][catKey].modules.some(m => m.id === subItem);
+                                        if (!exists) {
+                                            config[version][catKey].modules.push({
+                                                id: subItem,
+                                                name: manifest.name,
+                                                description: manifest.summary
+                                            });
+                                            moduleCount++;
+                                        }
+
+                                        // Create a relative symbolic link at the root level of custom directory
+                                        // so Odoo container can load it
+                                        const target = `./${item}/${subItem}`;
+                                        const linkPath = path.join(scanPath, subItem);
+
+                                        let linkExists = false;
+                                        try {
+                                            fs.lstatSync(linkPath);
+                                            linkExists = true;
+                                        } catch (e) {
+                                            // doesn't exist
+                                        }
+
+                                        if (!linkExists) {
+                                            try {
+                                                fs.symlinkSync(target, linkPath);
+                                                console.log(`Created symlink: ${subItem} -> ${target}`);
+                                            } catch (err) {
+                                                console.error(`Failed to create symlink for ${subItem}:`, err.message);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
+                    } catch (readErr) {
+                        console.error(`Failed to read nested folder ${itemPath}:`, readErr.message);
                     }
                 }
             }
