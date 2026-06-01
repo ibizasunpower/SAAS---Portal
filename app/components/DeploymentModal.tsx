@@ -197,29 +197,29 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full md:w-[70vw] md:h-[70vh] p-6 shadow-2xl relative animate-in zoom-in-95 duration-200 flex flex-col justify-between overflow-hidden">
                 <button
                     onClick={onClose}
                     disabled={loading}
-                    className="absolute right-4 top-4 text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="absolute right-4 top-4 text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-10"
                 >
                     <X size={20} />
                 </button>
 
-                <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-white mb-2">Deploy Odoo Instance</h2>
+                <div className="mb-4 shrink-0">
+                    <h2 className="text-2xl font-bold text-white mb-1">Deploy Odoo Instance</h2>
                     <p className="text-zinc-400 text-sm">Create a new Odoo environment for your client.</p>
                 </div>
 
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm mb-4">
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm mb-4 shrink-0">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow overflow-hidden">
                     {/* Left Column (Inputs) */}
-                    <div className="lg:col-span-5 space-y-4 flex flex-col justify-between">
+                    <div className="lg:col-span-5 flex flex-col justify-between overflow-y-auto pb-1 pr-1">
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
@@ -236,7 +236,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                     value={formData.clientName}
                                     onChange={e => setFormData({ ...formData, clientName: e.target.value })}
                                 />
-                                <p className="text-xs text-zinc-555">Will be used for directory and container names.</p>
+                                <p className="text-[10px] text-zinc-500">Will be used for directory and container names.</p>
                             </div>
 
                             <div className="space-y-2">
@@ -289,7 +289,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                             </div>
                         </div>
 
-                        <div className="pt-4 border-t border-zinc-800/80 mt-4">
+                        <div className="pt-4 border-t border-zinc-800/80 mt-4 shrink-0">
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -308,13 +308,13 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                     </div>
 
                     {/* Right Column (Modules Checklist) */}
-                    <div className="lg:col-span-7 flex flex-col min-h-[300px]">
-                        <div className="space-y-2 flex flex-col h-full">
-                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <div className="lg:col-span-7 flex flex-col overflow-hidden h-full">
+                        <div className="space-y-2 flex flex-col h-full overflow-hidden">
+                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2 shrink-0">
                                 <Box size={14} /> Pre-installed Modules (Custom selection)
                             </label>
                             {categories.length > 0 ? (
-                                <div className="space-y-3 bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex-grow overflow-y-auto max-h-[380px] min-h-[300px]">
+                                <div className="space-y-3 bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex-grow overflow-y-auto scrollbar-thin">
                                     {categories.map(cat => {
                                         const moduleIds = cat.modules ? cat.modules.map((m: any) => m.id) : [];
                                         const isExpanded = expandedCategories.includes(cat.id);
@@ -406,7 +406,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                     })}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center flex-grow border border-zinc-800 border-dashed rounded-lg p-6 bg-zinc-900/50 text-zinc-500 min-h-[300px]">
+                                <div className="flex flex-col items-center justify-center flex-grow border border-zinc-800 border-dashed rounded-lg p-6 bg-zinc-900/50 text-zinc-500">
                                     <Loader2 className="animate-spin mb-2" size={24} />
                                     <span className="text-xs">No custom modules found for Odoo {formData.version}.0</span>
                                 </div>
@@ -417,7 +417,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
                 {/* Live Console Logs positioned at the bottom end of the deployment window */}
                 {(loading || logs.length > 0) && (
-                    <div className="mt-6 border-t border-zinc-800/80 pt-4 space-y-2 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="mt-4 border-t border-zinc-800/80 pt-4 space-y-2 animate-in slide-in-from-bottom-2 duration-300 shrink-0">
                         <div className="flex items-center justify-between text-xs font-semibold text-zinc-400">
                             <span className="flex items-center gap-1.5">
                                 <span className={cn(
@@ -432,7 +432,7 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                         </div>
                         <div 
                             ref={logContainerRef}
-                            className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 h-48 overflow-y-auto font-mono text-[10px] text-zinc-300 space-y-1 selection:bg-zinc-800 scrollbar-thin"
+                            className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 h-32 overflow-y-auto font-mono text-[10px] text-zinc-300 space-y-1 selection:bg-zinc-800 scrollbar-thin"
                         >
                             {logs.map((log, idx) => (
                                 <div 
