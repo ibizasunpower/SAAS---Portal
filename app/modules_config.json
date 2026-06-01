@@ -1,56 +1,78 @@
 {
-  "field_service": {
-    "name": "Field Service (OCA)",
-    "description": "OCA Field Service Management modules.",
-    "modules": [
-      { "id": "base_territory", "name": "Base Territory" },
-      { "id": "fieldservice", "name": "Field Service Core" },
-      { "id": "fieldservice_account", "name": "Field Service Accounting" },
-      { "id": "fieldservice_activity", "name": "Field Service Activity" },
-      { "id": "fieldservice_agreement", "name": "Field Service Agreements" },
-      { "id": "fieldservice_availability", "name": "Field Service Availability" },
-      { "id": "fieldservice_calendar", "name": "Field Service Calendar" },
-      { "id": "fieldservice_crm", "name": "Field Service CRM" },
-      { "id": "fieldservice_equipment_stock", "name": "Field Service Stock Equipment" },
-      { "id": "fieldservice_equipment_warranty", "name": "Field Service Equipment Warranty" },
-      { "id": "fieldservice_kanban_info", "name": "Field Service Kanban Info" },
-      { "id": "fieldservice_portal", "name": "Field Service Portal" },
-      { "id": "fieldservice_project", "name": "Field Service Project" },
-      { "id": "fieldservice_recurring", "name": "Field Service Recurring Work Orders" },
-      { "id": "fieldservice_repair", "name": "Field Service Repair" },
-      { "id": "fieldservice_repair_order_template", "name": "Field Service Repair Order Template" },
-      { "id": "fieldservice_route", "name": "Field Service Route" },
-      { "id": "fieldservice_route_availability", "name": "Field Service Route Availability" },
-      { "id": "fieldservice_sale", "name": "Field Service Sales" },
-      { "id": "fieldservice_sale_agreement", "name": "Field Service Sale Agreements" },
-      { "id": "fieldservice_sale_agreement_equipment_stock", "name": "Field Service Sale Agreements and Stock Equipment" },
-      { "id": "fieldservice_sale_recurring", "name": "Field Service Sales Recurring" },
-      { "id": "fieldservice_sale_recurring_agreement", "name": "Field Service Recurring Agreement" },
-      { "id": "fieldservice_sale_stock", "name": "Field Service Sale Stock" },
-      { "id": "fieldservice_size", "name": "Field Service Sizes" },
-      { "id": "fieldservice_skill", "name": "Field Service Skills" },
-      { "id": "fieldservice_stage_server_action", "name": "Field Service Stage Server Action" },
-      { "id": "fieldservice_stock", "name": "Field Service Stock" },
-      { "id": "fieldservice_timesheet", "name": "Field Service Timesheet" },
-      { "id": "fieldservice_vehicle", "name": "Field Service Vehicles" }
-    ]
+  "18": {
+    "field_service": {
+      "name": "Field Service (OCA)",
+      "description": "OCA Field Service Management modules.",
+      "modules": [
+        { "id": "base_territory", "name": "Base Territory" },
+        { "id": "fieldservice", "name": "Field Service Core" },
+        { "id": "fieldservice_account", "name": "Field Service Accounting" },
+        { "id": "fieldservice_activity", "name": "Field Service Activity" },
+        { "id": "fieldservice_agreement", "name": "Field Service Agreements" },
+        { "id": "fieldservice_availability", "name": "Field Service Availability" },
+        { "id": "fieldservice_calendar", "name": "Field Service Calendar" },
+        { "id": "fieldservice_crm", "name": "Field Service CRM" },
+        { "id": "fieldservice_equipment_stock", "name": "Field Service Stock Equipment" },
+        { "id": "fieldservice_equipment_warranty", "name": "Field Service Equipment Warranty" },
+        { "id": "fieldservice_kanban_info", "name": "Field Service Kanban Info" },
+        { "id": "fieldservice_portal", "name": "Field Service Portal" },
+        { "id": "fieldservice_project", "name": "Field Service Project" },
+        { "id": "fieldservice_recurring", "name": "Field Service Recurring Work Orders" },
+        { "id": "fieldservice_repair", "name": "Field Service Repair" },
+        { "id": "fieldservice_repair_order_template", "name": "Field Service Repair Order Template" },
+        { "id": "fieldservice_route", "name": "Field Service Route" },
+        { "id": "fieldservice_route_availability", "name": "Field Service Route Availability" },
+        { "id": "fieldservice_sale", "name": "Field Service Sales" },
+        { "id": "fieldservice_sale_agreement", "name": "Field Service Sale Agreements" },
+        { "id": "fieldservice_sale_agreement_equipment_stock", "name": "Field Service Sale Agreements and Stock Equipment" },
+        { "id": "fieldservice_sale_recurring", "name": "Field Service Sales Recurring" },
+        { "id": "fieldservice_sale_recurring_agreement", "name": "Field Service Recurring Agreement" },
+        { "id": "fieldservice_sale_stock", "name": "Field Service Sale Stock" },
+        { "id": "fieldservice_size", "name": "Field Service Sizes" },
+        { "id": "fieldservice_skill", "name": "Field Service Skills" },
+        { "id": "fieldservice_stage_server_action", "name": "Field Service Stage Server Action" },
+        { "id": "fieldservice_stock", "name": "Field Service Stock" },
+        { "id": "fieldservice_timesheet", "name": "Field Service Timesheet" },
+        { "id": "fieldservice_vehicle", "name": "Field Service Vehicles" }
+      ]
+    },
+    "crm_sales": {
+      "name": "CRM & Sales",
+      "description": "Core Odoo CRM, Sales, and Invoicing pipeline.",
+      "modules": [
+        { "id": "crm", "name": "CRM" },
+        { "id": "sale", "name": "Sales" },
+        { "id": "sale_management", "name": "Sales Management" }
+      ]
+    },
+    "inventory_mrp": {
+      "name": "Inventory & Manufacturing",
+      "description": "Inventory management, purchase workflows, and MRP.",
+      "modules": [
+        { "id": "stock", "name": "Inventory" },
+        { "id": "purchase", "name": "Purchase" },
+        { "id": "mrp", "name": "Manufacturing" }
+      ]
+    }
   },
-  "crm_sales": {
-    "name": "CRM & Sales",
-    "description": "Core Odoo CRM, Sales, and Invoicing pipeline.",
-    "modules": [
-      { "id": "crm", "name": "CRM" },
-      { "id": "sale", "name": "Sales" },
-      { "id": "sale_management", "name": "Sales Management" }
-    ]
-  },
-  "inventory_mrp": {
-    "name": "Inventory & Manufacturing",
-    "description": "Inventory management, purchase workflows, and MRP.",
-    "modules": [
-      { "id": "stock", "name": "Inventory" },
-      { "id": "purchase", "name": "Purchase" },
-      { "id": "mrp", "name": "Manufacturing" }
-    ]
+  "19": {
+    "crm_sales": {
+      "name": "CRM & Sales",
+      "description": "Core Odoo CRM, Sales, and Invoicing pipeline.",
+      "modules": [
+        { "id": "crm", "name": "CRM" },
+        { "id": "sale", "name": "Sales" },
+        { "id": "sale_management", "name": "Sales Management" }
+      ]
+    },
+    "inventory_mrp": {
+      "name": "Inventory & Manufacturing",
+      "description": "Inventory management, purchase workflows, and MRP.",
+      "modules": [
+        { "id": "stock", "name": "Inventory" },
+        { "id": "purchase", "name": "Purchase" },
+        { "id": "mrp", "name": "Manufacturing" }
+      ]
+    }
   }
 }
