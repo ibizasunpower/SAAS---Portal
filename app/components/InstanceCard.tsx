@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Container, ExternalLink, Trash2, Terminal, Globe } from "lucide-react";
+import { Container, ExternalLink, Trash2, Terminal, Globe, Database } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ interface InstanceProps {
         ports: any[];
         labels: Record<string, string>;
         domain?: string;
+        database?: string;
     };
     onDelete: (instance: any) => void;
     onLogs: (instance: any) => void;
@@ -28,6 +29,9 @@ export function InstanceCard({ instance, onDelete, onLogs }: InstanceProps) {
 
     // Get Domain from labels or direct field
     const domain = instance.domain || instance.labels?.['com.odoo.domain'] || 'N/A';
+
+    // Get Database
+    const database = instance.database || 'N/A';
 
     // Clean name odoo-client -> client
     const displayName = name.startsWith('odoo-') ? name.replace('odoo-', '') : name;
@@ -60,6 +64,10 @@ export function InstanceCard({ instance, onDelete, onLogs }: InstanceProps) {
                 <div className="flex justify-between text-sm">
                     <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5"><Globe size={14} /> Domain</span>
                     <span className="text-zinc-700 dark:text-zinc-200 font-medium truncate max-w-[140px]" title={domain}>{domain}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5"><Database size={14} /> Database</span>
+                    <span className="text-zinc-700 dark:text-zinc-200 font-medium truncate max-w-[140px] font-mono text-xs text-zinc-600 dark:text-zinc-400" title={database}>{database}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                     <span className="text-zinc-500 dark:text-zinc-400">Port</span>

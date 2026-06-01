@@ -19,6 +19,7 @@ interface Instance {
     status: string;
     ports: any[];
     domain?: string;
+    database?: string;
 }
 
 interface InstanceTableProps {
@@ -102,6 +103,7 @@ export default function InstanceTable({ instances, onRefresh, onLogs, onDelete }
                                         <ArrowUpDown className="w-3.5 h-3.5" />
                                     </div>
                                 </th>
+                                <th className="px-6 py-4 w-[180px]">Database</th>
                                 <th className="px-6 py-4 w-[140px] cursor-pointer hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors" onClick={() => handleSort("state")}>
                                     <div className="flex items-center gap-1">
                                         Status
@@ -136,6 +138,9 @@ export default function InstanceTable({ instances, onRefresh, onLogs, onDelete }
                                             ) : (
                                                 <span className="text-zinc-400 dark:text-zinc-600 italic">N/A</span>
                                             )}
+                                        </td>
+                                        <td className="px-6 py-4 font-mono text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                                            {instance.database || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={cn(
@@ -183,7 +188,7 @@ export default function InstanceTable({ instances, onRefresh, onLogs, onDelete }
                             })}
                             {sortedInstances.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                                         No instances found.
                                     </td>
                                 </tr>
