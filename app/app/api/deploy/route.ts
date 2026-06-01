@@ -195,7 +195,40 @@ export async function POST(request: Request) {
             await execAsync(`docker exec ${containerName} odoo -d ${dbName} -i ${modulesList} --stop-after-init --no-http --without-demo=all`);
             await logger.info('DATABASE', `Database tables successfully initialized for ${dbName}.`, { instanceId });
         } catch (initErr: any) {
-            await logger.warn('DATABASE', `Database initialization CLI warning: ${initErr.message}`, { instanceId });
+            await logger.error('DATABASE', `Database initialization failed for ${dbName}: ${initErr.message}`, { instanceId });
+            
+            // Teardown and roll back changes to avoid leaving a corrupted state
+            await logger.info('DATABASE', `Starting cleanup for failed deployment of ${containerName}...`, { instanceId });
+            try {
+                await execAsync(`docker compose down -v`, { cwd: clientDir });
+            } catch (dockerDownErr: any) {
+                await logger.warn('DATABASE', `Docker compose down failed during cleanup: ${dockerDownErr.message}`, { instanceId });
+            }
+
+            try {
+                await execAsync(
+                    `docker exec -e PGPASSWORD=${PG_PASSWORD} ${DB_CONTAINER} psql -U odoo postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';" && docker exec -e PGPASSWORD=${PG_PASSWORD} ${DB_CONTAINER} psql -U odoo postgres -c "DROP DATABASE IF EXISTS \\"${dbName}\\";"`
+                );
+            } catch (dbDropErr: any) {
+                await logger.warn('DATABASE', `Failed to drop database during cleanup: ${dbDropErr.message}`, { instanceId });
+            }
+
+            try {
+                await fs.remove(clientDir);
+            } catch (fsErr: any) {
+                await logger.warn('DATABASE', `Failed to remove client directory during cleanup: ${fsErr.message}`, { instanceId });
+            }
+
+            try {
+                await registry.deleteInstanceRecord(instanceId);
+            } catch (registryErr: any) {
+                await logger.warn('DATABASE', `Failed to delete instance from registry during cleanup: ${registryErr.message}`, { instanceId });
+            }
+
+            const cleanErrMsg = initErr.stderr || initErr.stdout || initErr.message;
+            return NextResponse.json({ 
+                error: `Database initialization failed. This is usually due to a missing Python package, invalid syntax, or missing dependencies in your selected modules. Error: ${cleanErrMsg}`
+            }, { status: 500 });
         }
 
         // Restart container to refresh registry and assets cache
