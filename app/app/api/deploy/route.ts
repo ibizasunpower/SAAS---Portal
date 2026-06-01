@@ -181,7 +181,7 @@ export async function POST(request: Request) {
         // 8. Initialize Odoo Database via CLI
         await logger.info('DATABASE', `Initializing database tables for ${dbName}...`, { instanceId });
         try {
-            await execAsync(`docker exec ${containerName} odoo -d ${dbName} -i base,web --stop-after-init --no-http`);
+            await execAsync(`docker exec ${containerName} odoo -d ${dbName} -i base,web --stop-after-init --no-http --without-demo=all`);
             await logger.info('DATABASE', `Database tables successfully initialized for ${dbName}.`, { instanceId });
         } catch (initErr: any) {
             await logger.warn('DATABASE', `Database initialization CLI warning: ${initErr.message}`, { instanceId });

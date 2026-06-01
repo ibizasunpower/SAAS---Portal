@@ -236,7 +236,7 @@ app.post('/api/provision', async (req, res) => {
         logger.info('DATABASE', `Running schema CLI initialization inside ${containerName}...`);
         try {
             const exec = await container.exec({
-                Cmd: ['odoo', '-d', dbName, '-i', 'base,web', '--stop-after-init', '--no-http'],
+                Cmd: ['odoo', '-d', dbName, '-i', 'base,web', '--stop-after-init', '--no-http', '--without-demo=all'],
                 AttachStdout: true,
                 AttachStderr: true
             });
