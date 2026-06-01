@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2, Server, Globe, Box } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,9 +18,35 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         version: "19", // Default to latest
         domain: "",
     });
+    const [categories, setCategories] = useState<any[]>([]);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [error, setError] = useState("");
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch("/api/module-plans");
+                if (res.ok) {
+                    const data = await res.json();
+                    setCategories(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch module categories:", err);
+            }
+        };
+        fetchCategories();
+    }, [isOpen]);
+
     if (!isOpen) return null;
+
+    const handleCategoryChange = (categoryId: string) => {
+        setSelectedCategories(prev => 
+            prev.includes(categoryId)
+                ? prev.filter(id => id !== categoryId)
+                : [...prev, categoryId]
+        );
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,7 +57,10 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
             const res = await fetch("/api/deploy", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    selected_categories: selectedCategories
+                }),
             });
 
             const data = await res.json();
@@ -116,6 +145,32 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                             </button>
                         </div>
                     </div>
+
+                    {categories.length > 0 && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                                <Box size={14} /> Pre-installed Modules (Groups)
+                            </label>
+                            <div className="space-y-2 bg-zinc-900 border border-zinc-800 rounded-lg p-3 max-h-48 overflow-y-auto">
+                                {categories.map(cat => (
+                                    <label key={cat.id} className="flex items-start gap-3 cursor-pointer group p-1.5 rounded hover:bg-zinc-800/50 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            className="mt-1 rounded border-zinc-700 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4"
+                                            checked={selectedCategories.includes(cat.id)}
+                                            onChange={() => handleCategoryChange(cat.id)}
+                                        />
+                                        <div className="flex-1">
+                                            <div className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">{cat.name}</div>
+                                            {cat.description && (
+                                                <div className="text-[10px] text-zinc-500">{cat.description}</div>
+                                            )}
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">

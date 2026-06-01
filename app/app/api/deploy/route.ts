@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     
     try {
         const body = await request.json();
-        const { clientName, version, domain } = body;
+        const { clientName, version, domain, selected_categories } = body;
 
         if (!clientName || !version || !domain) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -40,6 +40,25 @@ export async function POST(request: Request) {
         dbName = `tenant_${slug}`;
 
         await logger.info('CREATION', `Starting deployment for client: ${clientName} (${containerName})`, { instanceId, slug, version, domain });
+
+        // Resolve selected module categories to module lists
+        let modulesToInstallSet = new Set<string>(['base', 'web']);
+        if (Array.isArray(selected_categories) && selected_categories.length > 0) {
+            try {
+                const configPath = path.join(process.cwd(), 'modules_config.json');
+                if (await fs.pathExists(configPath)) {
+                    const config = await fs.readJson(configPath);
+                    for (const cat of selected_categories) {
+                        if (config[cat] && Array.isArray(config[cat].modules)) {
+                            config[cat].modules.forEach((mod: string) => modulesToInstallSet.add(mod));
+                        }
+                    }
+                }
+            } catch (err: any) {
+                await logger.warn('CREATION', `Failed to parse modules_config.json: ${err.message}`, { instanceId });
+            }
+        }
+        const modulesList = Array.from(modulesToInstallSet).join(',');
 
         // 1. Collision Checks
         const registryRecord = await registry.getInstance(containerName);
@@ -181,7 +200,7 @@ export async function POST(request: Request) {
         // 8. Initialize Odoo Database via CLI
         await logger.info('DATABASE', `Initializing database tables for ${dbName}...`, { instanceId });
         try {
-            await execAsync(`docker exec ${containerName} odoo -d ${dbName} -i base,web --stop-after-init --no-http --without-demo=all`);
+            await execAsync(`docker exec ${containerName} odoo -d ${dbName} -i ${modulesList} --stop-after-init --no-http --without-demo=all`);
             await logger.info('DATABASE', `Database tables successfully initialized for ${dbName}.`, { instanceId });
         } catch (initErr: any) {
             await logger.warn('DATABASE', `Database initialization CLI warning: ${initErr.message}`, { instanceId });

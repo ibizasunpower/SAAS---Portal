@@ -1,0 +1,56 @@
+{
+  "field_service": {
+    "name": "Field Service (OCA)",
+    "description": "Install OCA Field Service modules (routes, skills, agreements, timesheets, vehicles, etc.).",
+    "modules": [
+      "base_territory",
+      "fieldservice",
+      "fieldservice_account",
+      "fieldservice_activity",
+      "fieldservice_agreement",
+      "fieldservice_availability",
+      "fieldservice_calendar",
+      "fieldservice_crm",
+      "fieldservice_equipment_stock",
+      "fieldservice_equipment_warranty",
+      "fieldservice_kanban_info",
+      "fieldservice_portal",
+      "fieldservice_project",
+      "fieldservice_recurring",
+      "fieldservice_repair",
+      "fieldservice_repair_order_template",
+      "fieldservice_route",
+      "fieldservice_route_availability",
+      "fieldservice_sale",
+      "fieldservice_sale_agreement",
+      "fieldservice_sale_agreement_equipment_stock",
+      "fieldservice_sale_recurring",
+      "fieldservice_sale_recurring_agreement",
+      "fieldservice_sale_stock",
+      "fieldservice_size",
+      "fieldservice_skill",
+      "fieldservice_stage_server_action",
+      "fieldservice_stock",
+      "fieldservice_timesheet",
+      "fieldservice_vehicle"
+    ]
+  },
+  "crm_sales": {
+    "name": "CRM & Sales",
+    "description": "Standard Odoo CRM, Sales, and Invoicing pipeline.",
+    "modules": [
+      "crm",
+      "sale",
+      "sale_management"
+    ]
+  },
+  "inventory_mrp": {
+    "name": "Inventory & Manufacturing",
+    "description": "Inventory management, purchase workflows, and MRP.",
+    "modules": [
+      "stock",
+      "purchase",
+      "mrp"
+    ]
+  }
+}
