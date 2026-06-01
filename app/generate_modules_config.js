@@ -50,11 +50,58 @@ function parseManifest(filePath) {
             return null;
         };
 
+        const extractDepends = () => {
+            const regex = /['"]depends['"]\s*:\s*\[([\s\S]*?)\]/i;
+            const match = cleanContent.match(regex);
+            if (match) {
+                return match[1]
+                    .split(',')
+                    .map(item => item.replace(/['"\s]/g, ''))
+                    .filter(Boolean);
+            }
+            return [];
+        };
+
+        const extractExternalDeps = () => {
+            const regex = /['"]external_dependencies['"]\s*:\s*\{([\s\S]*?)\}/i;
+            const match = cleanContent.match(regex);
+            if (match) {
+                const inner = match[1];
+                const pythonRegex = /['"]python['"]\s*:\s*\[([\s\S]*?)\]/i;
+                const pythonMatch = inner.match(pythonRegex);
+                const pythonDeps = pythonMatch 
+                    ? pythonMatch[1].split(',').map(item => item.replace(/['"\s]/g, '')).filter(Boolean)
+                    : [];
+
+                const binRegex = /['"]bin['"]\s*:\s*\[([\s\S]*?)\]/i;
+                const binMatch = inner.match(binRegex);
+                const binDeps = binMatch
+                    ? binMatch[1].split(',').map(item => item.replace(/['"\s]/g, '')).filter(Boolean)
+                    : [];
+
+                return { python: pythonDeps, bin: binDeps };
+            }
+            return null;
+        };
+
         const name = extractString('name') || path.basename(path.dirname(filePath));
         const category = extractString('category') || 'Uncategorized';
         const summary = extractString('summary') || '';
+        const depends = extractDepends();
+        const external_dependencies = extractExternalDeps();
 
-        return { name, category, summary };
+        let requirementsTxt = [];
+        const reqPath = path.join(path.dirname(filePath), 'requirements.txt');
+        if (fs.existsSync(reqPath)) {
+            try {
+                requirementsTxt = fs.readFileSync(reqPath, 'utf8')
+                    .split('\n')
+                    .map(line => line.replace(/#.*$/, '').trim())
+                    .filter(Boolean);
+            } catch {}
+        }
+
+        return { name, category, summary, depends, external_dependencies, requirements: requirementsTxt };
     } catch (err) {
         console.error(`Failed to parse manifest at ${filePath}:`, err.message);
         return null;
@@ -103,7 +150,10 @@ async function run() {
                             config[version][catKey].modules.push({
                                 id: item,
                                 name: manifest.name,
-                                description: manifest.summary
+                                description: manifest.summary,
+                                depends: manifest.depends,
+                                external_dependencies: manifest.external_dependencies,
+                                requirements: manifest.requirements
                             });
                             moduleCount++;
                         }
@@ -136,7 +186,10 @@ async function run() {
                                             config[version][catKey].modules.push({
                                                 id: subItem,
                                                 name: manifest.name,
-                                                description: manifest.summary
+                                                description: manifest.summary,
+                                                depends: manifest.depends,
+                                                external_dependencies: manifest.external_dependencies,
+                                                requirements: manifest.requirements
                                             });
                                             moduleCount++;
                                         }

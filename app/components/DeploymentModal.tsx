@@ -323,21 +323,46 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                                 </div>
 
                                                 {isExpanded && cat.modules && (
-                                                    <div className="pl-7 grid grid-cols-1 gap-2 pt-1.5 border-l border-zinc-800 ml-2 animate-in slide-in-from-top-1 duration-150">
-                                                        {cat.modules.map((mod: any) => (
-                                                            <label key={mod.id} className="flex items-center gap-2.5 cursor-pointer group py-0.5 select-none">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    disabled={loading}
-                                                                    className="rounded border-zinc-800 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-3.5 w-3.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                    checked={selectedModules.includes(mod.id)}
-                                                                    onChange={() => handleModuleChange(mod.id)}
-                                                                />
-                                                                <span className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors font-medium">
-                                                                    {mod.name} <span className="text-[9px] text-zinc-500 font-mono">({mod.id})</span>
-                                                                </span>
-                                                            </label>
-                                                        ))}
+                                                    <div className="pl-7 grid grid-cols-1 gap-2.5 pt-1.5 border-l border-zinc-800 ml-2 animate-in slide-in-from-top-1 duration-150">
+                                                        {cat.modules.map((mod: any) => {
+                                                            const hasDeps = mod.depends && mod.depends.length > 0;
+                                                            const hasPythonDeps = (mod.external_dependencies?.python && mod.external_dependencies.python.length > 0) || (mod.requirements && mod.requirements.length > 0);
+                                                            const pythonDepsList = [
+                                                                ...(mod.external_dependencies?.python || []),
+                                                                ...(mod.requirements || [])
+                                                            ];
+
+                                                            return (
+                                                                <div key={mod.id} className="space-y-0.5 py-0.5 group">
+                                                                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            disabled={loading}
+                                                                            className="rounded border-zinc-800 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-3.5 w-3.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            checked={selectedModules.includes(mod.id)}
+                                                                            onChange={() => handleModuleChange(mod.id)}
+                                                                        />
+                                                                        <span className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors font-medium">
+                                                                            {mod.name} <span className="text-[9px] text-zinc-500 font-mono">({mod.id})</span>
+                                                                        </span>
+                                                                    </label>
+                                                                    {(hasDeps || hasPythonDeps) && (
+                                                                        <div className="pl-6 space-y-0.5 text-[9px] text-zinc-500 font-mono leading-relaxed">
+                                                                            {hasDeps && (
+                                                                                <div>
+                                                                                    <span className="text-zinc-600">Depends:</span> {mod.depends.join(', ')}
+                                                                                </div>
+                                                                            )}
+                                                                            {hasPythonDeps && (
+                                                                                <div className="text-amber-500/80">
+                                                                                    <span className="text-zinc-650">Python reqs:</span> {pythonDepsList.join(', ')}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>
