@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Loader2, Server, Globe, Box, ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { X, Loader2, Server, Globe, Box, Search, CheckSquare, Square, Tag, Package, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DeploymentModalProps {
@@ -11,22 +11,37 @@ interface DeploymentModalProps {
     onSuccess: () => void;
 }
 
+// Known standard Odoo modules — these get the "Odoo Core" badge
+const STANDARD_ODOO_IDS = new Set([
+    'base','web','mail','account','account_accountant','account_analytic',
+    'crm','sale','sale_management','purchase','stock','mrp','project',
+    'hr','hr_expense','hr_holidays','hr_timesheet','hr_payroll',
+    'website','website_sale','ecommerce','point_of_sale','pos_restaurant',
+    'l10n_es','l10n_es_account','l10n_generic_coa','fleet',
+    'maintenance','quality','helpdesk','knowledge','discuss','calendar',
+    'contacts','note','lunch','survey','event','gamification',
+    'analytic','resource','digest','bus','portal','rating','utm',
+    'base_iban','base_vat','base_import','delivery','stock_account',
+    'mrp_account','purchase_stock','sale_stock','account_payment',
+    'payment','spreadsheet','documents','sign','approvals',
+]);
+
 export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalProps) {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         clientName: "",
-        version: "19", // Default to latest
+        version: "19",
         domain: "",
     });
     const [categories, setCategories] = useState<any[]>([]);
-    const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
     const [selectedModules, setSelectedModules] = useState<string[]>([]);
     const [error, setError] = useState("");
     const [logs, setLogs] = useState<any[]>([]);
-    
+    const [moduleSearch, setModuleSearch] = useState("");
+    const [activeCategory, setActiveCategory] = useState<string>("all");
+
     const logContainerRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to the bottom of the logs container
     useEffect(() => {
         if (logContainerRef.current) {
             logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
@@ -47,80 +62,71 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
             }
         };
         fetchCategories();
-        // Clear selected modules and expanded state when version changes to avoid mismatch
         setSelectedModules([]);
-        setExpandedCategories([]);
+        setModuleSearch("");
+        setActiveCategory("all");
         setLogs([]);
     }, [isOpen, formData.version]);
 
     if (!isOpen) return null;
 
-    const toggleExpand = (categoryId: string) => {
-        if (loading) return;
-        setExpandedCategories(prev => 
-            prev.includes(categoryId)
-                ? prev.filter(id => id !== categoryId)
-                : [...prev, categoryId]
-        );
-    };
+    // Flatten all modules into a single list with their category info
+    const allModules = useMemo(() => {
+        const flat: any[] = [];
+        categories.forEach(cat => {
+            (cat.modules || []).forEach((mod: any) => {
+                flat.push({
+                    ...mod,
+                    categoryId: cat.id,
+                    categoryName: cat.name,
+                    isStandard: STANDARD_ODOO_IDS.has(mod.id),
+                });
+            });
+        });
+        return flat;
+    }, [categories]);
 
-    const handleCategoryChange = (cat: any) => {
-        if (loading) return;
-        const moduleIds = cat.modules ? cat.modules.map((m: any) => m.id) : [];
-        const allSelected = moduleIds.length > 0 && moduleIds.every((id: string) => selectedModules.includes(id));
-        
-        if (allSelected) {
-            // Deselect all
-            setSelectedModules(prev => prev.filter(id => !moduleIds.includes(id)));
-        } else {
-            // Select all + their dependencies recursively
-            const depsToSelect = [...moduleIds];
-            const addDependencies = (modId: string) => {
-                for (const c of categories) {
-                    const mod = c.modules?.find((m: any) => m.id === modId);
-                    if (mod && mod.depends) {
-                        mod.depends.forEach((depId: string) => {
-                            const isAvailableCustom = categories.some(catObj => catObj.modules?.some((m: any) => m.id === depId));
-                            if (isAvailableCustom && !depsToSelect.includes(depId)) {
-                                depsToSelect.push(depId);
-                                addDependencies(depId);
-                            }
-                        });
-                    }
-                }
-            };
-            moduleIds.forEach((id: string) => addDependencies(id));
-            setSelectedModules(prev => Array.from(new Set([...prev, ...depsToSelect])));
-        }
-    };
+    // Unique category list for the filter tabs
+    const categoryTabs = useMemo(() => {
+        const tabs = [{ id: 'all', name: 'All', count: allModules.length }];
+        categories.forEach(cat => {
+            const count = (cat.modules || []).length;
+            if (count > 0) tabs.push({ id: cat.id, name: cat.name, count });
+        });
+        return tabs;
+    }, [categories, allModules.length]);
+
+    // Filtered modules based on search + category filter
+    const filteredModules = useMemo(() => {
+        const q = moduleSearch.toLowerCase().trim();
+        return allModules.filter(mod => {
+            const matchesCategory = activeCategory === 'all' || mod.categoryId === activeCategory;
+            if (!q) return matchesCategory;
+            return matchesCategory && (
+                mod.name?.toLowerCase().includes(q) ||
+                mod.id?.toLowerCase().includes(q) ||
+                mod.categoryName?.toLowerCase().includes(q)
+            );
+        });
+    }, [allModules, moduleSearch, activeCategory]);
 
     const handleModuleChange = (moduleId: string) => {
         if (loading) return;
-        
         setSelectedModules(prev => {
-            const isSelected = prev.includes(moduleId);
-            if (isSelected) {
-                return prev.filter(id => id !== moduleId);
-            } else {
-                const depsToSelect = [moduleId];
-                const addDependencies = (modId: string) => {
-                    for (const cat of categories) {
-                        const mod = cat.modules?.find((m: any) => m.id === modId);
-                        if (mod && mod.depends) {
-                            mod.depends.forEach((depId: string) => {
-                                const isAvailableCustom = categories.some(c => c.modules?.some((m: any) => m.id === depId));
-                                if (isAvailableCustom && !depsToSelect.includes(depId)) {
-                                    depsToSelect.push(depId);
-                                    addDependencies(depId);
-                                }
-                            });
-                        }
-                    }
-                };
-                addDependencies(moduleId);
-                return Array.from(new Set([...prev, ...depsToSelect]));
-            }
+            if (prev.includes(moduleId)) return prev.filter(id => id !== moduleId);
+            return [...prev, moduleId];
         });
+    };
+
+    const handleSelectAll = () => {
+        if (loading) return;
+        const ids = filteredModules.map(m => m.id);
+        const allChecked = ids.every(id => selectedModules.includes(id));
+        if (allChecked) {
+            setSelectedModules(prev => prev.filter(id => !ids.includes(id)));
+        } else {
+            setSelectedModules(prev => Array.from(new Set([...prev, ...ids])));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +145,6 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                 }),
             });
 
-            // If response is not a stream (e.g. validation crash)
             if (!res.ok) {
                 const contentType = res.headers.get("content-type");
                 if (contentType && contentType.includes("application/json")) {
@@ -162,28 +167,21 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = (partialLine + chunk).split("\n");
-                partialLine = lines.pop() || ""; // save the incomplete line
+                partialLine = lines.pop() || "";
 
                 for (const line of lines) {
                     if (line.trim()) {
                         try {
                             const logObj = JSON.parse(line);
                             setLogs(prev => [...prev, logObj]);
-
                             if (logObj.type === "success") {
                                 setLoading(false);
-                                // Short delay to let user realize it succeeded
-                                setTimeout(() => {
-                                    onSuccess();
-                                    onClose();
-                                }, 2000);
+                                setTimeout(() => { onSuccess(); onClose(); }, 2000);
                             } else if (logObj.type === "error") {
                                 setError(logObj.message);
                                 setLoading(false);
                             }
-                        } catch (parseErr) {
-                            console.error("Failed to parse log line JSON:", line, parseErr);
-                            // Fallback raw text log
+                        } catch {
                             setLogs(prev => [...prev, { type: "stdout", message: line, timestamp: new Date().toISOString() }]);
                         }
                     }
@@ -195,9 +193,12 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         }
     };
 
+    const filteredAllChecked = filteredModules.length > 0 && filteredModules.every(m => selectedModules.includes(m.id));
+    const filteredSomeChecked = !filteredAllChecked && filteredModules.some(m => selectedModules.includes(m.id));
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full md:w-[70vw] md:h-[70vh] p-6 shadow-2xl relative animate-in zoom-in-95 duration-200 flex flex-col justify-between overflow-hidden">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full md:w-[70vw] md:h-[70vh] p-6 shadow-2xl relative animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden">
                 <button
                     onClick={onClose}
                     disabled={loading}
@@ -217,79 +218,96 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow overflow-hidden">
-                    {/* Left Column (Inputs) */}
-                    <div className="lg:col-span-5 flex flex-col justify-between overflow-y-auto pb-1 pr-1">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                                    <Server size={14} /> Client Name
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    disabled={loading}
-                                    pattern="[a-z0-9-]+"
-                                    title="Lowercase letters, numbers and hyphens only"
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-650 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
-                                    placeholder="e.g. client-acme-corp"
-                                    value={formData.clientName}
-                                    onChange={e => setFormData({ ...formData, clientName: e.target.value })}
-                                />
-                                <p className="text-[10px] text-zinc-500">Will be used for directory and container names.</p>
-                            </div>
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow overflow-hidden min-h-0">
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                                    <Box size={14} /> Odoo Version
-                                </label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        disabled={loading}
-                                        onClick={() => setFormData({ ...formData, version: "18" })}
-                                        className={cn(
-                                            "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
-                                            formData.version === "18"
-                                                ? "bg-blue-500/10 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                                                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
-                                        )}
-                                    >
-                                        Odoo 18.0
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={loading}
-                                        onClick={() => setFormData({ ...formData, version: "19" })}
-                                        className={cn(
-                                            "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
-                                            formData.version === "19"
-                                                ? "bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
-                                                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
-                                        )}
-                                    >
-                                        Odoo 19.0
-                                    </button>
-                                </div>
-                            </div>
+                    {/* ── Left Column: Config ── */}
+                    <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto pr-1">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                                <Server size={14} /> Client Name
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                disabled={loading}
+                                pattern="[a-z0-9-]+"
+                                title="Lowercase letters, numbers and hyphens only"
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-600 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
+                                placeholder="e.g. client-acme-corp"
+                                value={formData.clientName}
+                                onChange={e => setFormData({ ...formData, clientName: e.target.value })}
+                            />
+                            <p className="text-[10px] text-zinc-500">Lowercase letters, numbers and hyphens only.</p>
+                        </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                                    <Globe size={14} /> Domain
-                                </label>
-                                <input
-                                    type="text"
-                                    required
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                                <Box size={14} /> Odoo Version
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
                                     disabled={loading}
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-650 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
-                                    placeholder="e.g. odoo.acme.com"
-                                    value={formData.domain}
-                                    onChange={e => setFormData({ ...formData, domain: e.target.value })}
-                                />
+                                    onClick={() => setFormData({ ...formData, version: "18" })}
+                                    className={cn(
+                                        "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
+                                        formData.version === "18"
+                                            ? "bg-blue-500/10 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                                    )}
+                                >
+                                    Odoo 18.0
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={loading}
+                                    onClick={() => setFormData({ ...formData, version: "19" })}
+                                    className={cn(
+                                        "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
+                                        formData.version === "19"
+                                            ? "bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
+                                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                                    )}
+                                >
+                                    Odoo 19.0
+                                </button>
                             </div>
                         </div>
 
-                        <div className="pt-4 border-t border-zinc-800/80 mt-4 shrink-0">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                                <Globe size={14} /> Domain
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                disabled={loading}
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-600 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
+                                placeholder="e.g. odoo.acme.com"
+                                value={formData.domain}
+                                onChange={e => setFormData({ ...formData, domain: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Selected summary */}
+                        {selectedModules.length > 0 && (
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2 flex items-center justify-between">
+                                <span className="text-xs text-blue-400 flex items-center gap-1.5">
+                                    <Package size={12} />
+                                    <strong>{selectedModules.length}</strong> module{selectedModules.length !== 1 ? 's' : ''} selected
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedModules([])}
+                                    disabled={loading}
+                                    className="text-[10px] text-blue-400/60 hover:text-blue-300 transition-colors"
+                                >
+                                    Clear all
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="pt-2 border-t border-zinc-800/80 mt-auto">
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -307,115 +325,157 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                         </div>
                     </div>
 
-                    {/* Right Column (Modules Checklist) */}
-                    <div className="lg:col-span-7 flex flex-col overflow-hidden h-full">
-                        <div className="space-y-2 flex flex-col h-full overflow-hidden">
-                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2 shrink-0">
-                                <Box size={14} /> Pre-installed Modules (Custom selection)
-                            </label>
-                            {categories.length > 0 ? (
-                                <div className="space-y-3 bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex-grow overflow-y-auto scrollbar-thin">
-                                    {categories.map(cat => {
-                                        const moduleIds = cat.modules ? cat.modules.map((m: any) => m.id) : [];
-                                        const isExpanded = expandedCategories.includes(cat.id);
-                                        const allSelected = moduleIds.length > 0 && moduleIds.every((id: string) => selectedModules.includes(id));
-                                        const someSelected = !allSelected && moduleIds.some((id: string) => selectedModules.includes(id));
+                    {/* ── Right Column: Module Picker ── */}
+                    <div className="lg:col-span-8 flex flex-col overflow-hidden min-h-0 border border-zinc-800 rounded-xl bg-zinc-900/40">
 
+                        {/* Header */}
+                        <div className="px-4 pt-3 pb-2 border-b border-zinc-800 shrink-0 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                                    <Package size={14} className="text-blue-400" />
+                                    Pre-installed Modules
+                                </span>
+                                {filteredModules.length > 0 && (
+                                    <button
+                                        type="button"
+                                        disabled={loading}
+                                        onClick={handleSelectAll}
+                                        className="flex items-center gap-1.5 text-[11px] text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-zinc-800"
+                                    >
+                                        {filteredAllChecked
+                                            ? <><CheckSquare size={13} className="text-blue-400" /> Deselect all</>
+                                            : <><Square size={13} /> Select all {activeCategory !== 'all' ? 'in category' : ''}</>
+                                        }
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Search */}
+                            <div className="relative">
+                                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    placeholder="Search modules by name or ID..."
+                                    value={moduleSearch}
+                                    disabled={loading}
+                                    onChange={e => setModuleSearch(e.target.value)}
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                                />
+                                {moduleSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setModuleSearch('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Category tabs */}
+                            {categoryTabs.length > 1 && (
+                                <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none flex-wrap">
+                                    {categoryTabs.map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            type="button"
+                                            disabled={loading}
+                                            onClick={() => setActiveCategory(tab.id)}
+                                            className={cn(
+                                                "shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-all font-medium flex items-center gap-1",
+                                                activeCategory === tab.id
+                                                    ? "bg-blue-500/15 border-blue-500/50 text-blue-400"
+                                                    : "bg-zinc-800/60 border-zinc-700/50 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600"
+                                            )}
+                                        >
+                                            <Tag size={9} />
+                                            {tab.name}
+                                            <span className={cn("ml-0.5", activeCategory === tab.id ? "text-blue-300" : "text-zinc-600")}>{tab.count}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Module list */}
+                        <div className="flex-1 overflow-y-auto scrollbar-thin min-h-0 p-2">
+                            {categories.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-zinc-500 py-10">
+                                    <Loader2 className="animate-spin mb-2" size={22} />
+                                    <span className="text-xs">Loading modules for Odoo {formData.version}.0...</span>
+                                </div>
+                            ) : filteredModules.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-zinc-500 py-10">
+                                    <Search size={22} className="mb-2 opacity-40" />
+                                    <span className="text-xs">No modules match &quot;{moduleSearch}&quot;</span>
+                                    <button type="button" onClick={() => setModuleSearch('')} className="mt-2 text-[10px] text-blue-400 hover:underline">Clear search</button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-0.5">
+                                    {filteredModules.map(mod => {
+                                        const isChecked = selectedModules.includes(mod.id);
                                         return (
-                                            <div key={cat.id} className="space-y-1.5 border-b border-zinc-850 last:border-0 pb-3 last:pb-0">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="flex items-start gap-3 cursor-pointer group py-0.5 select-none">
-                                                        <input
-                                                            type="checkbox"
-                                                            disabled={loading}
-                                                            className={cn(
-                                                                "mt-1 rounded border-zinc-700 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
-                                                                someSelected && "opacity-60"
-                                                            )}
-                                                            checked={allSelected}
-                                                            onChange={() => handleCategoryChange(cat)}
-                                                        />
-                                                        <div>
-                                                            <div className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">{cat.name}</div>
-                                                            {cat.description && (
-                                                                <div className="text-[10px] text-zinc-400">{cat.description}</div>
-                                                            )}
-                                                        </div>
-                                                    </label>
-                                                    
-                                                    {moduleIds.length > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => toggleExpand(cat.id)}
-                                                            className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors flex items-center gap-1 text-[10px]"
-                                                        >
-                                                            {isExpanded ? (
-                                                                <>Hide ({moduleIds.length}) <ChevronDown size={14} /></>
-                                                            ) : (
-                                                                <>Show ({moduleIds.length}) <ChevronRight size={14} /></>
-                                                            )}
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {isExpanded && cat.modules && (
-                                                    <div className="pl-7 grid grid-cols-1 gap-2.5 pt-1.5 border-l border-zinc-800 ml-2 animate-in slide-in-from-top-1 duration-150">
-                                                        {cat.modules.map((mod: any) => {
-                                                            const hasDeps = mod.depends && mod.depends.length > 0;
-                                                            const hasPythonDeps = (mod.external_dependencies?.python && mod.external_dependencies.python.length > 0) || (mod.requirements && mod.requirements.length > 0);
-                                                            const pythonDepsList = [
-                                                                ...(mod.external_dependencies?.python || []),
-                                                                ...(mod.requirements || [])
-                                                            ];
-
-                                                            return (
-                                                                <div key={mod.id} className="space-y-0.5 py-0.5 group">
-                                                                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            disabled={loading}
-                                                                            className="rounded border-zinc-800 bg-zinc-950 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-3.5 w-3.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                            checked={selectedModules.includes(mod.id)}
-                                                                            onChange={() => handleModuleChange(mod.id)}
-                                                                        />
-                                                                        <span className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors font-medium">
-                                                                            {mod.name} <span className="text-[9px] text-zinc-500 font-mono">({mod.id})</span>
-                                                                        </span>
-                                                                    </label>
-                                                                    {(hasDeps || hasPythonDeps) && (
-                                                                        <div className="pl-6 space-y-0.5 text-[9px] text-zinc-500 font-mono leading-relaxed">
-                                                                            {hasDeps && (
-                                                                                <div>
-                                                                                    <span className="text-zinc-600">Depends:</span> {mod.depends.join(', ')}
-                                                                                </div>
-                                                                            )}
-                                                                            {hasPythonDeps && (
-                                                                                <div className="text-amber-500/80">
-                                                                                    <span className="text-zinc-650">Python reqs:</span> {pythonDepsList.join(', ')}
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                                            <label
+                                                key={mod.id}
+                                                className={cn(
+                                                    "flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer select-none group transition-all",
+                                                    isChecked
+                                                        ? "bg-blue-500/10 border border-blue-500/20"
+                                                        : "hover:bg-zinc-800/60 border border-transparent",
+                                                    loading && "pointer-events-none opacity-60"
                                                 )}
-                                            </div>
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    disabled={loading}
+                                                    className="mt-0.5 rounded border-zinc-600 bg-zinc-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4 cursor-pointer shrink-0"
+                                                    checked={isChecked}
+                                                    onChange={() => handleModuleChange(mod.id)}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className={cn(
+                                                            "text-sm font-medium transition-colors",
+                                                            isChecked ? "text-white" : "text-zinc-300 group-hover:text-white"
+                                                        )}>
+                                                            {mod.name}
+                                                        </span>
+                                                        {mod.isStandard ? (
+                                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 font-medium">
+                                                                Odoo Core
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400 border border-violet-500/20 font-medium">
+                                                                OCA
+                                                            </span>
+                                                        )}
+                                                        {activeCategory === 'all' && (
+                                                            <span className="text-[9px] text-zinc-600">
+                                                                {mod.categoryName}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] text-zinc-500 font-mono">{mod.id}</span>
+                                                </div>
+                                            </label>
                                         );
                                     })}
                                 </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center flex-grow border border-zinc-800 border-dashed rounded-lg p-6 bg-zinc-900/50 text-zinc-500">
-                                    <Loader2 className="animate-spin mb-2" size={24} />
-                                    <span className="text-xs">No custom modules found for Odoo {formData.version}.0</span>
-                                </div>
                             )}
+                        </div>
+
+                        {/* Footer count */}
+                        <div className="px-4 py-2 border-t border-zinc-800 shrink-0 flex items-center justify-between text-[10px] text-zinc-500">
+                            <span>
+                                Showing {filteredModules.length} of {allModules.length} modules
+                                {filteredSomeChecked && <span className="ml-2 text-blue-400">{filteredModules.filter(m => selectedModules.includes(m.id)).length} selected in view</span>}
+                            </span>
+                            {moduleSearch && <span className="text-zinc-600">Filtered by: &quot;{moduleSearch}&quot;</span>}
                         </div>
                     </div>
                 </form>
 
-                {/* Live Console Logs positioned at the bottom end of the deployment window */}
+                {/* Live Console */}
                 {(loading || logs.length > 0) && (
                     <div className="mt-4 border-t border-zinc-800/80 pt-4 space-y-2 animate-in slide-in-from-bottom-2 duration-300 shrink-0">
                         <div className="flex items-center justify-between text-xs font-semibold text-zinc-400">
@@ -424,19 +484,17 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                     "h-2 w-2 rounded-full",
                                     loading ? "bg-blue-500 animate-pulse" : (error ? "bg-red-500" : "bg-emerald-500")
                                 )}></span>
-                                {loading ? "Streaming Live Deployment logs..." : (error ? "Deployment Failed" : "Deployment Completed")}
+                                {loading ? "Streaming live deployment logs..." : (error ? "Deployment Failed" : "Deployment Completed")}
                             </span>
-                            <span className="text-[10px] font-mono text-zinc-500">
-                                {logs.length} lines captured
-                            </span>
+                            <span className="text-[10px] font-mono text-zinc-500">{logs.length} lines captured</span>
                         </div>
-                        <div 
+                        <div
                             ref={logContainerRef}
                             className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 h-32 overflow-y-auto font-mono text-[10px] text-zinc-300 space-y-1 selection:bg-zinc-800 scrollbar-thin"
                         >
                             {logs.map((log, idx) => (
-                                <div 
-                                    key={idx} 
+                                <div
+                                    key={idx}
                                     className={cn(
                                         "flex items-start gap-2 whitespace-pre-wrap leading-relaxed border-l-2 pl-2 py-0.5",
                                         log.type === 'info' && "border-blue-500 text-zinc-200",
