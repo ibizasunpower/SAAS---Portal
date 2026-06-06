@@ -440,10 +440,14 @@ export async function POST(request: Request) {
                         sendLog('info', `Configuring Nginx Proxy Manager routing for domain ${domain}...`);
                         try {
                             const forwardHost = process.env.NPM_FORWARD_HOST || '172.17.0.1';
-                            await npmClient.createProxyHost(domain, forwardHost, port);
-                            sendLog('info', `NPM Proxy Host configured successfully.`);
+                            const result = await npmClient.createProxyHost(domain, forwardHost, port);
+                            if (result) {
+                                sendLog('info', `NPM Proxy Host configured successfully.`);
+                            } else {
+                                sendLog('stderr', `Warning: NPM API credentials are not configured in your .env file on the server. Skipping automatic routing. You must add the Proxy Host manually inside your Nginx Proxy Manager admin panel.`);
+                            }
                         } catch (npmErr: any) {
-                            sendLog('stderr', `NPM integration error: ${npmErr.message}. You may need to create mapping manually.`);
+                            sendLog('stderr', `NPM integration error: ${npmErr.message}. You will need to create the Proxy Host manually.`);
                         }
                     }
 
