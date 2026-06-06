@@ -312,7 +312,7 @@ export async function POST(request: Request) {
                     try {
                         await runCommandStream(
                             'docker',
-                            ['exec', containerName, 'odoo', '-d', dbName, '-i', coreModulesList,
+                            ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', coreModulesList,
                              '--stop-after-init', '--no-http', '--without-demo=all'],
                             {},
                             handleOutput
@@ -320,9 +320,11 @@ export async function POST(request: Request) {
                         sendLog('info', `Phase 1 complete — core modules installed.`);
                     } catch (coreErr: any) {
                         // Capture Odoo logs from inside the container for diagnosis
-                        sendLog('error', `Phase 1 FAILED (exit code 255). Fetching Odoo container logs for diagnosis...`);
+                        sendLog('error', `Phase 1 FAILED. Fetching Odoo container logs for diagnosis...`);
+                        sendLog('error', `This error (often exit code 255) usually means Odoo crashed on startup or was terminated abruptly by the OS (e.g. killed by the Out-Of-Memory / OOM killer due to insufficient server RAM).`);
+                        sendLog('info', `Please verify that your database is running and that your server has enough RAM (consider adding a swap file if memory is low).`);
                         try {
-                            await runCommandStream('docker', ['logs', '--tail', '60', containerName], {}, handleOutput);
+                            await runCommandStream('docker', ['logs', '--tail', '100', containerName], {}, handleOutput);
                         } catch { /* ignore */ }
                         throw coreErr;
                     }
@@ -337,21 +339,21 @@ export async function POST(request: Request) {
                                 sendLog('info', `  → Installing: ${mod}`);
                                 await runCommandStream(
                                     'docker',
-                                    ['exec', containerName, 'odoo', '-d', dbName, '-i', mod,
+                                    ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', mod,
                                      '--stop-after-init', '--no-http', '--without-demo=all'],
                                     {},
-                                    (data, type) => { if (type === 'stderr' && data.includes('ERROR')) handleOutput(data, type); }
+                                    handleOutput
                                 );
                                 succeeded.push(mod);
-                            } catch {
+                            } catch (err: any) {
                                 failed.push(mod);
-                                sendLog('stderr', `  ✗ Module "${mod}" failed to install (skipped). Check if it is on the addons_path or has unmet dependencies.`);
+                                sendLog('stderr', `  ✗ Module "${mod}" failed to install (skipped). Reason: ${err.message}`);
                             }
                         }
                         sendLog('info', `Phase 2 complete — ${succeeded.length} installed, ${failed.length} skipped.`);
                         if (failed.length > 0) {
                             sendLog('stderr', `Skipped modules: ${failed.join(', ')}`);
-                            sendLog('stderr', `Tip: Run "docker exec ${containerName} odoo -d ${dbName} -i <module> --stop-after-init" manually to see the full Python traceback.`);
+                            sendLog('stderr', `Tip: Run "docker exec -e PYTHONUNBUFFERED=1 ${containerName} odoo -d ${dbName} -i <module> --stop-after-init" manually inside your server terminal to see the full traceback.`);
                         }
                     }
 

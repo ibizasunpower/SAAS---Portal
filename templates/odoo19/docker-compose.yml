@@ -24,6 +24,7 @@ services:
       - HOST=db
       - USER=odoo
       - PASSWORD=Enter@123!
+      - PYTHONUNBUFFERED=1
 
 volumes:
   odoo-web-data-8002:
