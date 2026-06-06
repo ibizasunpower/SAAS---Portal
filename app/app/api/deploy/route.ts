@@ -308,26 +308,49 @@ export async function POST(request: Request) {
                     }
 
                     // ── STEP 5a: Install standard Odoo modules (FATAL if fails) ──────────
-                    sendLog('info', `[5/6] Phase 1 — Installing core Odoo modules (${coreModules.size} modules)...`);
+                    sendLog('info', `[5/6] Phase 1 — Installing core Odoo modules (${coreModules.size} modules) sequentially to prevent memory exhaustion...`);
+                    
+                    // Always install 'base' first
+                    sendLog('info', `  → Installing foundation: base`);
                     try {
                         await runCommandStream(
                             'docker',
-                            ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', coreModulesList,
+                            ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', 'base',
                              '--stop-after-init', '--no-http', '--without-demo=all'],
                             {},
                             handleOutput
                         );
-                        sendLog('info', `Phase 1 complete — core modules installed.`);
-                    } catch (coreErr: any) {
-                        // Capture Odoo logs from inside the container for diagnosis
-                        sendLog('error', `Phase 1 FAILED. Fetching Odoo container logs for diagnosis...`);
+                    } catch (baseErr: any) {
+                        sendLog('error', `Installation of base foundation module FAILED. Fetching logs...`);
                         sendLog('error', `This error (often exit code 255) usually means Odoo crashed on startup or was terminated abruptly by the OS (e.g. killed by the Out-Of-Memory / OOM killer due to insufficient server RAM).`);
                         sendLog('info', `Please verify that your database is running and that your server has enough RAM (consider adding a swap file if memory is low).`);
                         try {
                             await runCommandStream('docker', ['logs', '--tail', '100', containerName], {}, handleOutput);
                         } catch { /* ignore */ }
-                        throw coreErr;
+                        throw baseErr;
                     }
+
+                    // Install the remaining core modules one by one
+                    const remainingCore = Array.from(coreModules).filter(m => m !== 'base');
+                    for (const mod of remainingCore) {
+                        sendLog('info', `  → Installing core module: ${mod}`);
+                        try {
+                            await runCommandStream(
+                                'docker',
+                                ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', mod,
+                                 '--stop-after-init', '--no-http', '--without-demo=all'],
+                                {},
+                                handleOutput
+                            );
+                        } catch (coreErr: any) {
+                            sendLog('error', `Installation of core module "${mod}" FAILED. Fetching logs...`);
+                            try {
+                                await runCommandStream('docker', ['logs', '--tail', '100', containerName], {}, handleOutput);
+                            } catch { /* ignore */ }
+                            throw coreErr;
+                        }
+                    }
+                    sendLog('info', `Phase 1 complete — all core modules successfully installed.`);
 
                     // ── STEP 5b: Install OCA/custom modules (BEST-EFFORT, one by one) ───
                     if (ocaModules.size > 0) {
