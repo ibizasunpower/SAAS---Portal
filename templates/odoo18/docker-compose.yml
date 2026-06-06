@@ -15,7 +15,7 @@ services:
       - "8001:8001"
     volumes:
       - ./addons:/mnt/extra-addons
-      - ../../common18:/mnt/common18
+      - ../../common18/custom:/mnt/common18/custom
       - ./config:/etc/odoo
       - odoo-web-data-8001:/var/lib/odoo
     environment:
