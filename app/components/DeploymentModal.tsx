@@ -371,10 +371,13 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                     </button>
                                 )}
                             </div>
+                        </div>
 
-                            {/* Category tabs */}
+                        {/* Content Area with Categories Sidebar & Modules List */}
+                        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
+                            {/* Categories Sidebar */}
                             {categoryTabs.length > 1 && (
-                                <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none flex-wrap">
+                                <div className="w-full sm:w-52 border-b sm:border-b-0 sm:border-r border-zinc-800 overflow-x-auto sm:overflow-y-auto p-2 flex flex-row sm:flex-col gap-1 scrollbar-thin bg-zinc-950/20 shrink-0 max-h-16 sm:max-h-none">
                                     {categoryTabs.map(tab => (
                                         <button
                                             key={tab.id}
@@ -382,95 +385,105 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                                             disabled={loading}
                                             onClick={() => setActiveCategory(tab.id)}
                                             className={cn(
-                                                "shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-all font-medium flex items-center gap-1",
+                                                "text-left text-[11px] px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all font-medium flex items-center justify-between gap-2 shrink-0 sm:shrink-0",
                                                 activeCategory === tab.id
-                                                    ? "bg-blue-500/15 border-blue-500/50 text-blue-400"
-                                                    : "bg-zinc-800/60 border-zinc-700/50 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600"
+                                                    ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/45 border border-transparent"
                                             )}
                                         >
-                                            <Tag size={9} />
-                                            {tab.name}
-                                            <span className={cn("ml-0.5", activeCategory === tab.id ? "text-blue-300" : "text-zinc-600")}>{tab.count}</span>
+                                            <span className="truncate flex items-center gap-1.5">
+                                                <Tag size={10} className={activeCategory === tab.id ? "text-blue-400" : "text-zinc-500"} />
+                                                {tab.name}
+                                            </span>
+                                            <span className={cn(
+                                                "text-[9px] px-1.5 py-0.5 rounded-full font-mono",
+                                                activeCategory === tab.id ? "bg-blue-500/20 text-blue-300" : "bg-zinc-800 text-zinc-500"
+                                            )}>
+                                                {tab.count}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
                             )}
-                        </div>
 
-                        {/* Module list */}
-                        <div className="flex-1 overflow-y-auto scrollbar-thin min-h-0 p-2">
-                            {categories.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-zinc-500 py-10">
-                                    <Loader2 className="animate-spin mb-2" size={22} />
-                                    <span className="text-xs">Loading modules for Odoo {formData.version}.0...</span>
-                                </div>
-                            ) : filteredModules.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-zinc-500 py-10">
-                                    <Search size={22} className="mb-2 opacity-40" />
-                                    <span className="text-xs">No modules match &quot;{moduleSearch}&quot;</span>
-                                    <button type="button" onClick={() => setModuleSearch('')} className="mt-2 text-[10px] text-blue-400 hover:underline">Clear search</button>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-0.5">
-                                    {filteredModules.map(mod => {
-                                        const isChecked = selectedModules.includes(mod.id);
-                                        return (
-                                            <label
-                                                key={mod.id}
-                                                className={cn(
-                                                    "flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer select-none group transition-all",
-                                                    isChecked
-                                                        ? "bg-blue-500/10 border border-blue-500/20"
-                                                        : "hover:bg-zinc-800/60 border border-transparent",
-                                                    loading && "pointer-events-none opacity-60"
-                                                )}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    disabled={loading}
-                                                    className="mt-0.5 rounded border-zinc-600 bg-zinc-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4 cursor-pointer shrink-0"
-                                                    checked={isChecked}
-                                                    onChange={() => handleModuleChange(mod.id)}
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className={cn(
-                                                            "text-sm font-medium transition-colors",
-                                                            isChecked ? "text-white" : "text-zinc-300 group-hover:text-white"
-                                                        )}>
-                                                            {mod.name}
-                                                        </span>
-                                                        {mod.isStandard ? (
-                                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 font-medium">
-                                                                Odoo Core
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400 border border-violet-500/20 font-medium">
-                                                                OCA
-                                                            </span>
+                            {/* Modules List Pane */}
+                            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                                {/* Module list */}
+                                <div className="flex-1 overflow-y-auto scrollbar-thin min-h-0 p-2">
+                                    {categories.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-zinc-500 py-10">
+                                            <Loader2 className="animate-spin mb-2" size={22} />
+                                            <span className="text-xs">Loading modules for Odoo {formData.version}.0...</span>
+                                        </div>
+                                    ) : filteredModules.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-zinc-500 py-10">
+                                            <Search size={22} className="mb-2 opacity-40" />
+                                            <span className="text-xs">No modules match &quot;{moduleSearch}&quot;</span>
+                                            <button type="button" onClick={() => setModuleSearch('')} className="mt-2 text-[10px] text-blue-400 hover:underline">Clear search</button>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-0.5">
+                                            {filteredModules.map(mod => {
+                                                const isChecked = selectedModules.includes(mod.id);
+                                                return (
+                                                    <label
+                                                        key={mod.id}
+                                                        className={cn(
+                                                            "flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer select-none group transition-all",
+                                                            isChecked
+                                                                ? "bg-blue-500/10 border border-blue-500/20"
+                                                                : "hover:bg-zinc-800/60 border border-transparent",
+                                                            loading && "pointer-events-none opacity-60"
                                                         )}
-                                                        {activeCategory === 'all' && (
-                                                            <span className="text-[9px] text-zinc-600">
-                                                                {mod.categoryName}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <span className="text-[10px] text-zinc-500 font-mono">{mod.id}</span>
-                                                </div>
-                                            </label>
-                                        );
-                                    })}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            disabled={loading}
+                                                            className="mt-0.5 rounded border-zinc-600 bg-zinc-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-zinc-950 h-4 w-4 cursor-pointer shrink-0"
+                                                            checked={isChecked}
+                                                            onChange={() => handleModuleChange(mod.id)}
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className={cn(
+                                                                    "text-sm font-medium transition-colors",
+                                                                    isChecked ? "text-white" : "text-zinc-300 group-hover:text-white"
+                                                                )}>
+                                                                    {mod.name}
+                                                                </span>
+                                                                {mod.isStandard ? (
+                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 font-medium">
+                                                                        Odoo Core
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400 border border-violet-500/20 font-medium">
+                                                                        OCA
+                                                                    </span>
+                                                                )}
+                                                                {activeCategory === 'all' && (
+                                                                    <span className="text-[9px] text-zinc-600">
+                                                                        {mod.categoryName}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-[10px] text-zinc-500 font-mono">{mod.id}</span>
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        {/* Footer count */}
-                        <div className="px-4 py-2 border-t border-zinc-800 shrink-0 flex items-center justify-between text-[10px] text-zinc-500">
-                            <span>
-                                Showing {filteredModules.length} of {allModules.length} modules
-                                {filteredSomeChecked && <span className="ml-2 text-blue-400">{filteredModules.filter(m => selectedModules.includes(m.id)).length} selected in view</span>}
-                            </span>
-                            {moduleSearch && <span className="text-zinc-600">Filtered by: &quot;{moduleSearch}&quot;</span>}
+                                {/* Footer count */}
+                                <div className="px-4 py-2 border-t border-zinc-800 shrink-0 flex items-center justify-between text-[10px] text-zinc-500">
+                                    <span>
+                                        Showing {filteredModules.length} of {allModules.length} modules
+                                        {filteredSomeChecked && <span className="ml-2 text-blue-400">{filteredModules.filter(m => selectedModules.includes(m.id)).length} selected in view</span>}
+                                    </span>
+                                    {moduleSearch && <span className="text-zinc-600">Filtered by: &quot;{moduleSearch}&quot;</span>}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
