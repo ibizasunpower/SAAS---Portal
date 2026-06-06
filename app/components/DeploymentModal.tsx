@@ -68,19 +68,43 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         setLogs([]);
     }, [isOpen, formData.version]);
 
-    // Flatten all modules into a single list with their category info
+    // Flatten all modules into a single list with their category info (unique by ID, prioritizing original category assignment over oca_essentials)
     const allModules = useMemo(() => {
         const flat: any[] = [];
+        const seen = new Set<string>();
+        
+        // Phase 1: Add from standard categories
         categories.forEach(cat => {
+            if (cat.id === 'oca_essentials') return;
             (cat.modules || []).forEach((mod: any) => {
-                flat.push({
-                    ...mod,
-                    categoryId: cat.id,
-                    categoryName: cat.name,
-                    isStandard: STANDARD_ODOO_IDS.has(mod.id),
-                });
+                if (!seen.has(mod.id)) {
+                    flat.push({
+                        ...mod,
+                        categoryId: cat.id,
+                        categoryName: cat.name,
+                        isStandard: STANDARD_ODOO_IDS.has(mod.id),
+                    });
+                    seen.add(mod.id);
+                }
             });
         });
+        
+        // Phase 2: Add any remaining in oca_essentials (not in any other scanned category)
+        categories.forEach(cat => {
+            if (cat.id !== 'oca_essentials') return;
+            (cat.modules || []).forEach((mod: any) => {
+                if (!seen.has(mod.id)) {
+                    flat.push({
+                        ...mod,
+                        categoryId: cat.id,
+                        categoryName: cat.name,
+                        isStandard: STANDARD_ODOO_IDS.has(mod.id),
+                    });
+                    seen.add(mod.id);
+                }
+            });
+        });
+        
         return flat;
     }, [categories]);
 
@@ -97,16 +121,31 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
     // Filtered modules based on search + category filter
     const filteredModules = useMemo(() => {
         const q = moduleSearch.toLowerCase().trim();
-        return allModules.filter(mod => {
-            const matchesCategory = activeCategory === 'all' || mod.categoryId === activeCategory;
-            if (!q) return matchesCategory;
-            return matchesCategory && (
+        
+        let targets: any[] = [];
+        if (activeCategory === 'all') {
+            targets = allModules;
+        } else {
+            const cat = categories.find(c => c.id === activeCategory);
+            if (cat) {
+                targets = (cat.modules || []).map((mod: any) => ({
+                    ...mod,
+                    categoryId: cat.id,
+                    categoryName: cat.name,
+                    isStandard: STANDARD_ODOO_IDS.has(mod.id),
+                }));
+            }
+        }
+
+        return targets.filter(mod => {
+            if (!q) return true;
+            return (
                 mod.name?.toLowerCase().includes(q) ||
                 mod.id?.toLowerCase().includes(q) ||
                 mod.categoryName?.toLowerCase().includes(q)
             );
         });
-    }, [allModules, moduleSearch, activeCategory]);
+    }, [allModules, categories, moduleSearch, activeCategory]);
 
     if (!isOpen) return null;
 
