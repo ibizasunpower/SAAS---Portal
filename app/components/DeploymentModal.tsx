@@ -68,8 +68,6 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
         setLogs([]);
     }, [isOpen, formData.version]);
 
-    if (!isOpen) return null;
-
     // Flatten all modules into a single list with their category info
     const allModules = useMemo(() => {
         const flat: any[] = [];
@@ -109,6 +107,8 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
             );
         });
     }, [allModules, moduleSearch, activeCategory]);
+
+    if (!isOpen) return null;
 
     const handleModuleChange = (moduleId: string) => {
         if (loading) return;
