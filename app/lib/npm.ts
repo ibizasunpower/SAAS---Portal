@@ -51,7 +51,7 @@ export class NpmClient {
                     letsencrypt_agree: false,
                     dns_challenge: false
                 },
-                advanced_config: "",
+                advanced_config: `client_max_body_size 200m;\n\nproxy_read_timeout 720s;\nproxy_connect_timeout 720s;\nproxy_send_timeout 720s;\n\nproxy_set_header Host $host;\nproxy_set_header X-Real-IP $remote_addr;\nproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\nproxy_set_header X-Forwarded-Proto $scheme;\n\n# Websocket support (important for Odoo chatter / notifications)\nproxy_set_header Upgrade $http_upgrade;\nproxy_set_header Connection "upgrade";`,
                 locations: [],
                 block_exploits: true,
                 caching_enabled: false,
