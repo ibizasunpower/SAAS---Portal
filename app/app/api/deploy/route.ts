@@ -111,16 +111,37 @@ export async function POST(request: Request) {
             }
         }
 
-        // Setup installation modules list
-        let modulesToInstallSet = new Set<string>(['base', 'web']);
+        // Build the module lists — split into standard Odoo vs OCA/custom
+        const KNOWN_STANDARD_ODOO_MODULES = new Set<string>([
+            'base','web','mail','account','account_accountant','account_analytic',
+            'crm','sale','sale_management','purchase','stock','mrp','project',
+            'hr','hr_expense','hr_holidays','hr_timesheet','hr_payroll',
+            'website','website_sale','ecommerce','point_of_sale','pos_restaurant',
+            'l10n_es','l10n_es_account','l10n_generic_coa','fleet',
+            'maintenance','quality','helpdesk','knowledge','discuss','calendar',
+            'contacts','note','lunch','survey','event','gamification',
+            'analytic','resource','digest','bus','portal','rating','utm',
+            'base_iban','base_vat','base_import','delivery','stock_account',
+            'mrp_account','purchase_stock','sale_stock','account_payment',
+            'payment','spreadsheet','documents','sign','approvals',
+        ]);
+
+        const coreModules = new Set<string>(['base', 'web']);
+        const ocaModules = new Set<string>();
+
         if (Array.isArray(selected_modules) && selected_modules.length > 0) {
             selected_modules.forEach((mod: string) => {
-                if (mod && typeof mod === 'string') {
-                    modulesToInstallSet.add(mod.trim());
+                if (!mod || typeof mod !== 'string') return;
+                const m = mod.trim();
+                if (KNOWN_STANDARD_ODOO_MODULES.has(m)) {
+                    coreModules.add(m);
+                } else {
+                    ocaModules.add(m);
                 }
             });
         }
-        const modulesList = Array.from(modulesToInstallSet).join(',');
+
+        const coreModulesList = Array.from(coreModules).join(',');
 
         // Return ReadableStream for live server log updates
         const encoder = new TextEncoder();
@@ -286,15 +307,55 @@ export async function POST(request: Request) {
                         }
                     }
 
-                    // Step 5: Database CLI Initialization
-                    sendLog('info', `[5/6] Initializing Odoo database with selected modules: [${modulesList}] (this may take up to 30s)...`);
-                    await runCommandStream(
-                        'docker',
-                        ['exec', containerName, 'odoo', '-d', dbName, '-i', modulesList, '--stop-after-init', '--no-http', '--without-demo=all'],
-                        {},
-                        handleOutput
-                    );
-                    sendLog('info', `Database tables successfully initialized for ${dbName}.`);
+                    // ── STEP 5a: Install standard Odoo modules (FATAL if fails) ──────────
+                    sendLog('info', `[5/6] Phase 1 — Installing core Odoo modules (${coreModules.size} modules)...`);
+                    try {
+                        await runCommandStream(
+                            'docker',
+                            ['exec', containerName, 'odoo', '-d', dbName, '-i', coreModulesList,
+                             '--stop-after-init', '--no-http', '--without-demo=all'],
+                            {},
+                            handleOutput
+                        );
+                        sendLog('info', `Phase 1 complete — core modules installed.`);
+                    } catch (coreErr: any) {
+                        // Capture Odoo logs from inside the container for diagnosis
+                        sendLog('error', `Phase 1 FAILED (exit code 255). Fetching Odoo container logs for diagnosis...`);
+                        try {
+                            await runCommandStream('docker', ['logs', '--tail', '60', containerName], {}, handleOutput);
+                        } catch { /* ignore */ }
+                        throw coreErr;
+                    }
+
+                    // ── STEP 5b: Install OCA/custom modules (BEST-EFFORT, one by one) ───
+                    if (ocaModules.size > 0) {
+                        sendLog('info', `[5b/6] Phase 2 — Installing ${ocaModules.size} OCA/custom modules (failures are warnings, not crashes)...`);
+                        const failed: string[] = [];
+                        const succeeded: string[] = [];
+                        for (const mod of ocaModules) {
+                            try {
+                                sendLog('info', `  → Installing: ${mod}`);
+                                await runCommandStream(
+                                    'docker',
+                                    ['exec', containerName, 'odoo', '-d', dbName, '-i', mod,
+                                     '--stop-after-init', '--no-http', '--without-demo=all'],
+                                    {},
+                                    (data, type) => { if (type === 'stderr' && data.includes('ERROR')) handleOutput(data, type); }
+                                );
+                                succeeded.push(mod);
+                            } catch {
+                                failed.push(mod);
+                                sendLog('stderr', `  ✗ Module "${mod}" failed to install (skipped). Check if it is on the addons_path or has unmet dependencies.`);
+                            }
+                        }
+                        sendLog('info', `Phase 2 complete — ${succeeded.length} installed, ${failed.length} skipped.`);
+                        if (failed.length > 0) {
+                            sendLog('stderr', `Skipped modules: ${failed.join(', ')}`);
+                            sendLog('stderr', `Tip: Run "docker exec ${containerName} odoo -d ${dbName} -i <module> --stop-after-init" manually to see the full Python traceback.`);
+                        }
+                    }
+
+                    sendLog('info', `Database initialisation complete for ${dbName}.`);
 
                     // Restart container to refresh assets and load addons registry
                     sendLog('info', `Restarting Odoo container to apply registry cache changes...`);
