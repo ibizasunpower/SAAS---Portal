@@ -22,246 +22,97 @@ export async function GET(request: Request) {
         const ocaEssentialsSet = new Set<string>();
 
         const OCA_ESSENTIAL_IDS = new Set([
-            // UX / Modern Interface & Productivity
-            'web_responsive',
-            'web_environment_ribbon',
-            'web_dialog_size',
-            'web_notify',
-            'web_sheet_full_width',
-            'web_tree_dynamic_colored_field',
-            'web_ir_actions_act_view_reload',
-            'web_company_color',
+            // 1. ODOO CE CORE (BASE INSTALL)
+            'base',
+            'web',
+            'mail',
+            'portal',
+            'digest',
+            'account',
+            'account_accountant',
+            'analytic',
+            'account_reports',
+            'sale_management',
+            'sale_stock',
+            'purchase',
+            'stock',
+            'product',
+            'uom',
+            'contacts',
+            'calendar',
+            'hr',
+            'report',
 
-            // Accounting
+            // 3. ACCOUNTING CORE (ENTERPRISE-LEVEL FINANCE)
+            'account_usability',
             'account_financial_report',
+            'account_financial_report_qweb',
             'account_general_ledger',
             'account_trial_balance',
-            'account_tax_balance',
-            'account_partner_ledger',
-            'account_asset_management',
-            'account_invoice_auto_send_by_email',
-            'account_move_base_import',
-            'account_invoice_report_grouped_by_picking',
-            'account_payment_order',
+            'account_lock_to_date',
+            'account_journal_lock_date',
+            'account_invoice_check_total',
+            'account_move_line_reconcile_manual',
+            'account_fiscal_position_vat_check',
+            'account_cutoff_accrual_picking',
+
+            // 4. RECONCILIATION SYSTEM
+            'account_reconcile_oca',
+            'account_reconcile_wizard',
+            'account_reconcile_model_oca',
+            'account_partner_reconcile',
+            'bank_statement_reconcile',
+            'account_statement_base',
+
+            // 5. BANKING + PAYMENTS
+            'account_payment',
             'account_payment_mode',
             'account_payment_partner',
-            'account_reconcile_model_oca',
-            'account_statement_import',
-            'account_statement_import_ofx',
-            'account_statement_import_qif',
-            'account_statement_import_camt',
-            'account_statement_import_mt940',
-            'account_bank_statement_import_helper',
-            'account_lock_date_update',
-            'account_fiscal_year',
-            'account_journal_lock_date',
+            'account_bank_statement_import_file',
+            'account_bank_statement_import_csv',
+            'account_bank_statement_import_xlsx',
+            'account_bank_statement_import_camt',
+            'account_move_base_import',
+            'account_bank_statement_import_online',
 
-            // Sales
-            'sale_order_type',
-            'sale_automatic_workflow',
-            'sale_automatic_workflow_stock',
-            'sale_automatic_workflow_job',
-            'sale_exception',
-            'sale_global_discount',
-            'sale_discount_display_amount',
-            'sale_fixed_discount',
-            'sale_invoice_policy',
-            'sale_invoice_frequency',
-            'sale_order_archive',
-            'sale_order_priority',
-            'sale_stock_cancel_restriction',
-            'sale_delivery_state',
-            'sale_tier_validation',
+            // 6. PROCUREMENT + 3-WAY MATCH FOUNDATION
+            'purchase_stock',
+            'stock_account',
+            'purchase_stock_picking_invoice_link',
+            'purchase_order_line_price_history',
+            'purchase_allowed_product',
 
-            // CRM
-            'crm_lead_code',
-            'crm_lead_firstname',
-            'crm_claim',
-            'crm_partner_assign',
-            'crm_stage_probability',
-            'crm_industry',
-            'crm_tag',
-            'crm_location',
-
-            // Purchasing
-            'purchase_request',
-            'purchase_request_tier_validation',
-            'purchase_order_type',
-            'purchase_exception',
-            'purchase_cancel_reason',
-            'purchase_open_qty',
-            'purchase_stock_manual_currency',
-            'purchase_reception_status',
-
-            // Inventory & Warehouse
-            'stock_picking_batch_extended',
-            'stock_picking_invoice_link',
-            'stock_move_line_qty_picked',
-            'stock_no_negative',
-            'stock_inventory_discrepancy',
-            'stock_cycle_count',
-            'stock_location_children',
-            'stock_picking_back2draft',
-            'stock_available',
-            'stock_available_unreserved',
-            'stock_available_immediately',
-            'stock_quant_cost_info',
+            // 7. INVENTORY + STOCK ENHANCEMENTS
+            'stock_picking_batch',
+            'stock_move_line_auto_fill',
+            'stock_valuation_layer_revaluation',
             'stock_demand_estimate',
-            'stock_barcode',
-            'stock_barcode_mobile',
+            'stock_available',
 
-            // Manufacturing
-            'mrp_bom_hierarchy',
-            'mrp_bom_structure_report',
-            'mrp_multi_level',
-            'mrp_production_back_to_draft',
-            'mrp_production_split',
-            'mrp_unbuild_tracked_raw_material',
-            'mrp_workorder_lock_planning',
-            'mrp_lot_number_propagation',
-            'quality_control',
-            'quality_control_stock',
-            'quality_control_mrp',
+            // 8. FINANCIAL REPORTING + BI
+            'mis_builder',
+            'mis_builder_budget',
 
-            // Project
-            'project_task_default_stage',
-            'project_task_parent_completion_blocking',
-            'project_task_stage_state',
-            'project_task_code',
-            'project_task_dependency',
-            'project_timesheet_time_control',
-            'project_role',
-            'project_category',
-            'project_template',
+            // 9. SPAIN LOCALIZATION + AEAT COMPLIANCE
+            'l10n_es',
+            'l10n_es_aeat_mod303',
+            'l10n_es_aeat_mod347',
+            'l10n_es_aeat_mod390',
+            'l10n_es_aeat_sii',
+            'l10n_es_vat_book',
+            'l10n_es_partner',
+            'l10n_es_account_asset',
 
-            // Helpdesk
-            'helpdesk_mgmt',
-            'helpdesk_mgmt_sla',
-            'helpdesk_mgmt_project',
-            'helpdesk_mgmt_rating',
-            'helpdesk_mgmt_sale',
-            'helpdesk_type',
+            // 10. ACCOUNTING RULES + CONTROL LAYER
+            'account_analytic_required',
+            'account_analytic_distribution',
 
-            // Field Service
-            'fieldservice',
-            'fieldservice_agreement',
-            'fieldservice_calendar',
-            'fieldservice_crm',
-            'fieldservice_equipment',
-            'fieldservice_project',
-            'fieldservice_route',
-            'fieldservice_sale',
-            'fieldservice_stock',
-            'fieldservice_vehicle',
-
-            // HR
-            'hr_employee_age',
-            'hr_employee_service',
-            'hr_employee_language',
-            'hr_contract_reference',
-            'hr_skill',
-            'hr_department_code',
-            'hr_attendance_reason',
-            'hr_holidays_public',
-            'hr_holidays_public_city',
-            'hr_expense_invoice',
-
-            // Recruitment
-            'hr_recruitment',
-            'hr_recruitment_stage',
-            'hr_recruitment_survey',
-
-            // Maintenance
-            'maintenance_equipment_sequence',
-            'maintenance_plan',
-            'maintenance_request_purchase',
-            'maintenance_project',
-
-            // Subscription Management
-            'contract',
-            'contract_sale',
-            'contract_invoice_start_end_dates',
-            'contract_variable_quantity',
-            'contract_payment_mode',
-            'contract_mandate',
-
-            // Documents / DMS
-            'dms',
-            'dms_field',
-            'dms_mail',
-            'dms_user_role',
-            'dms_auto_classification',
-            'dms_attachment_link',
-
-            // Website
-            'website_snippet_anchor',
-            'website_menu_by_user_status',
-            'website_cookie_notice',
-            'website_legal_page',
-            'website_seo_redirection',
-            'website_mega_menu',
-            'website_event_filter_city',
-
-            // eCommerce
-            'website_sale_stock_available',
-            'website_sale_product_attachment',
-            'website_sale_product_brand',
-            'website_sale_wishlist_keep',
-            'website_sale_secondary_unit',
-            'website_sale_hide_price',
-            'website_sale_comparison_wishlist',
-
-            // Marketing
-            'mass_mailing_partner',
-            'mass_mailing_contact',
-            'mail_tracking',
-            'mail_activity_board',
-            'mail_activity_done',
-            'mail_optional_autofollow',
-            'mail_debrand',
-
-            // Knowledge Base
-            'knowledge',
-            'knowledge_article',
-            'knowledge_base',
-
-            // Electronic Signature
-            'sign_oca',
-            'document_sign',
-
-            // Calendar & Appointments
-            'calendar_resource',
-            'calendar_export_ics',
-            'resource_booking',
-
-            // Reporting
-            'bi_sql_editor',
-            'report_xlsx',
-            'report_csv',
-            'report_xml',
-            'report_pdf_zip_download',
-
-            // Security & Administration
-            'auditlog',
-            'auth_admin_passkey',
-            'auth_jwt',
-            'auth_session_timeout',
-            'password_security',
-            'base_user_role',
-            'base_tier_validation',
-            'base_technical_user',
-            'base_exception',
-            'base_import_match',
-
-            // SaaS Platform Essentials
-            'queue_job',
-            'queue_job_cron',
-            'base_rest',
-            'component',
-            'connector',
-            'connector_base_product',
-            'server_action_mass_edit',
-            'server_env'
+            // 11. UX + WEB IMPROVEMENTS
+            'web_responsive',
+            'web_dialog_size',
+            'web_m2x_options',
+            'web_no_bubble',
+            'web_refresher'
         ]);
 
         // Find matches across all scanned categories
