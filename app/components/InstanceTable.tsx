@@ -7,7 +7,8 @@ import {
     ExternalLink,
     ArrowUpDown,
     Terminal,
-    Download
+    Download,
+    FolderPlus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -31,12 +32,13 @@ interface InstanceTableProps {
     onLogs: (instance: Instance) => void;
     onDelete: (instance: Instance) => void;
     onBackup: (instance: Instance) => void;
+    onCreateTemplate: (instance: Instance) => void;
 }
 
 type SortKey = "name" | "port" | "state";
 type SortDirection = "asc" | "desc";
 
-export default function InstanceTable({ instances, onRefresh, onLogs, onDelete, onBackup }: InstanceTableProps) {
+export default function InstanceTable({ instances, onRefresh, onLogs, onDelete, onBackup, onCreateTemplate }: InstanceTableProps) {
     const [sortKey, setSortKey] = useState<SortKey>("name");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -195,6 +197,14 @@ export default function InstanceTable({ instances, onRefresh, onLogs, onDelete, 
                                                     title="Backup & Download Database"
                                                 >
                                                     <Download className="w-4 h-4" />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => onCreateTemplate(instance)}
+                                                    className="p-2 text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 rounded-lg transition-colors"
+                                                    title="Create Template from Instance"
+                                                >
+                                                    <FolderPlus className="w-4 h-4" />
                                                 </button>
 
                                                 <button

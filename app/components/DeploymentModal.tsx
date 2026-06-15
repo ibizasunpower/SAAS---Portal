@@ -30,9 +30,11 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         clientName: "",
-        version: "19",
+        version: "18",
         domain: "",
+        template: "odoo18",
     });
+    const [templates, setTemplates] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedModules, setSelectedModules] = useState<string[]>([]);
     const [error, setError] = useState("");
@@ -50,6 +52,32 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
     useEffect(() => {
         if (!isOpen) return;
+        const fetchTemplates = async () => {
+            try {
+                const res = await fetch('/api/templates');
+                if (res.ok) {
+                    const data = await res.json();
+                    setTemplates(data);
+                    const defaultTpl = data.find((t: any) => t.id === `odoo${formData.version}`);
+                    if (defaultTpl) {
+                        setFormData(prev => ({ ...prev, template: defaultTpl.id }));
+                    } else if (data.length > 0) {
+                        setFormData(prev => ({ ...prev, template: data[0].id, version: data[0].version }));
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch templates:", err);
+            }
+        };
+        fetchTemplates();
+        setSelectedModules([]);
+        setModuleSearch("");
+        setActiveCategory("all");
+        setLogs([]);
+    }, [isOpen, formData.version]);
+
+    useEffect(() => {
+        if (!isOpen) return;
         const fetchCategories = async () => {
             try {
                 const res = await fetch(`/api/module-plans?version=${formData.version}`);
@@ -62,10 +90,6 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
             }
         };
         fetchCategories();
-        setSelectedModules([]);
-        setModuleSearch("");
-        setActiveCategory("all");
-        setLogs([]);
     }, [isOpen, formData.version]);
 
     // Flatten all modules into a single list with their category info (unique by ID, prioritizing original category assignment over oca_essentials)
@@ -281,36 +305,29 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                                <Box size={14} /> Odoo Version
+                                <Box size={14} /> Deployment Template
                             </label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    disabled={loading}
-                                    onClick={() => setFormData({ ...formData, version: "18" })}
-                                    className={cn(
-                                        "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
-                                        formData.version === "18"
-                                            ? "bg-blue-500/10 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
-                                    )}
-                                >
-                                    Odoo 18.0
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={loading}
-                                    onClick={() => setFormData({ ...formData, version: "19" })}
-                                    className={cn(
-                                        "py-3 px-4 rounded-lg border text-sm font-medium transition-all disabled:opacity-55 disabled:cursor-not-allowed",
-                                        formData.version === "19"
-                                            ? "bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
-                                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
-                                    )}
-                                >
-                                    Odoo 19.0
-                                </button>
-                            </div>
+                            <select
+                                disabled={loading}
+                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm cursor-pointer"
+                                value={formData.template}
+                                onChange={(e) => {
+                                    const selectedTpl = templates.find(t => t.id === e.target.value);
+                                    if (selectedTpl) {
+                                        setFormData({
+                                            ...formData,
+                                            template: selectedTpl.id,
+                                            version: selectedTpl.version
+                                        });
+                                    }
+                                }}
+                            >
+                                {templates.map(t => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.name} {t.is_custom ? '(Custom)' : ''} (Odoo {t.version}.0)
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div className="space-y-2">

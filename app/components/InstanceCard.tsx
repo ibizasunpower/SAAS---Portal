@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Container, ExternalLink, Trash2, Terminal, Globe, Database, Download, Calendar, ShieldCheck } from "lucide-react";
+import { Container, ExternalLink, Trash2, Terminal, Globe, Database, Download, Calendar, ShieldCheck, FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -22,9 +22,10 @@ interface InstanceProps {
     onDelete: (instance: any) => void;
     onLogs: (instance: any) => void;
     onBackup: (instance: any) => void;
+    onCreateTemplate: (instance: any) => void;
 }
 
-export function InstanceCard({ instance, onDelete, onLogs, onBackup }: InstanceProps) {
+export function InstanceCard({ instance, onDelete, onLogs, onBackup, onCreateTemplate }: InstanceProps) {
     const name = (instance.names[0] || "Unknown").replace('/', '');
     const isRunning = instance.state === 'running';
     // Find public port
@@ -126,6 +127,14 @@ export function InstanceCard({ instance, onDelete, onLogs, onBackup }: InstanceP
                     title="Backup & Download Database"
                 >
                     <Download size={18} />
+                </button>
+
+                <button
+                    onClick={() => onCreateTemplate(instance)}
+                    className="p-2.5 text-zinc-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors border border-transparent"
+                    title="Create Template from Instance"
+                >
+                    <FolderPlus size={18} />
                 </button>
 
                 {isRunning && port !== 'N/A' ? (

@@ -24,15 +24,15 @@ function runCommandStream(
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const proc = spawn(command, args, options);
-        
+
         proc.stdout?.on('data', (chunk) => {
             onLog(chunk.toString('utf8'), 'stdout');
         });
-        
+
         proc.stderr?.on('data', (chunk) => {
             onLog(chunk.toString('utf8'), 'stderr');
         });
-        
+
         proc.on('close', (code) => {
             if (code === 0) {
                 resolve();
@@ -40,7 +40,7 @@ function runCommandStream(
                 reject(new Error(`Command "${command} ${args.join(' ')}" failed with exit code ${code}`));
             }
         });
-        
+
         proc.on('error', (err) => {
             reject(err);
         });
@@ -51,10 +51,10 @@ export async function POST(request: Request) {
     const instanceId = crypto.randomUUID();
     let containerName = '';
     let dbName = '';
-    
+
     try {
         const body = await request.json();
-        const { clientName, version, domain, selected_modules } = body;
+        const { clientName, version, domain, selected_modules, template } = body;
 
         // Validation Checks (Fast failures)
         if (!clientName || !version || !domain) {
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
         // Verify with docker list
         const containers = await docker.listContainers({ all: true });
-        const nameCollision = containers.some(c => 
+        const nameCollision = containers.some(c =>
             c.Names.some(n => n.replace('/', '') === containerName)
         );
         if (nameCollision) {
@@ -89,9 +89,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: `Client directory ${containerName} already exists on disk` }, { status: 409 });
         }
 
-        const templatePath = path.join(TEMPLATE_DIR, `odoo${version}`);
+        const templateToUse = template || `odoo${version}`;
+        const templatePath = path.join(TEMPLATE_DIR, templateToUse);
         if (!fs.existsSync(templatePath)) {
-            return NextResponse.json({ error: `Template for version ${version} not found` }, { status: 404 });
+            return NextResponse.json({ error: `Template '${templateToUse}' not found` }, { status: 404 });
+        }
+
+        let resolvedVersion = version;
+        const metadataPath = path.join(templatePath, 'metadata.json');
+        if (fs.existsSync(metadataPath)) {
+            try {
+                const meta = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+                if (meta.version) {
+                    resolvedVersion = meta.version;
+                }
+            } catch { /* ignore */ }
         }
 
         // 2. Select Port
@@ -113,17 +125,17 @@ export async function POST(request: Request) {
 
         // Build the module lists — split into standard Odoo vs OCA/custom
         const KNOWN_STANDARD_ODOO_MODULES = new Set<string>([
-            'base','web','mail','account','account_accountant','account_analytic',
-            'crm','sale','sale_management','purchase','stock','mrp','project',
-            'hr','hr_expense','hr_holidays','hr_timesheet','hr_payroll',
-            'website','website_sale','ecommerce','point_of_sale','pos_restaurant',
-            'l10n_es','l10n_es_account','l10n_generic_coa','fleet',
-            'maintenance','quality','helpdesk','knowledge','discuss','calendar',
-            'contacts','note','lunch','survey','event','gamification',
-            'analytic','resource','digest','bus','portal','rating','utm',
-            'base_iban','base_vat','base_import','delivery','stock_account',
-            'mrp_account','purchase_stock','sale_stock','account_payment',
-            'payment','spreadsheet','documents','sign','approvals',
+            'base', 'web', 'mail', 'account', 'account_accountant', 'account_analytic',
+            'crm', 'sale', 'sale_management', 'purchase', 'stock', 'mrp', 'project',
+            'hr', 'hr_expense', 'hr_holidays', 'hr_timesheet', 'hr_payroll',
+            'website', 'website_sale', 'ecommerce', 'point_of_sale', 'pos_restaurant',
+            'l10n_es', 'l10n_es_account', 'l10n_generic_coa', 'fleet',
+            'maintenance', 'quality', 'helpdesk', 'knowledge', 'discuss', 'calendar',
+            'contacts', 'note', 'lunch', 'survey', 'event', 'gamification',
+            'analytic', 'resource', 'digest', 'bus', 'portal', 'rating', 'utm',
+            'base_iban', 'base_vat', 'base_import', 'delivery', 'stock_account',
+            'mrp_account', 'purchase_stock', 'sale_stock', 'account_payment',
+            'payment', 'spreadsheet', 'documents', 'sign', 'approvals',
         ]);
 
         const coreModules = new Set<string>(['base', 'web']);
@@ -163,7 +175,7 @@ export async function POST(request: Request) {
 
                 try {
                     await logger.info('CREATION', `Starting streamed deployment for: ${clientName}`, { instanceId, slug, version, domain });
-                    
+
                     // Collect Python dependencies of selected modules from config
                     const pythonPackagesToInstall = new Set<string>();
                     try {
@@ -171,7 +183,7 @@ export async function POST(request: Request) {
                         if (await fs.pathExists(configPath)) {
                             const config = await fs.readJson(configPath);
                             const versionConfig = config[version] || config['18'] || {};
-                            
+
                             if (Array.isArray(selected_modules)) {
                                 selected_modules.forEach((modId: string) => {
                                     for (const catKey of Object.keys(versionConfig)) {
@@ -210,19 +222,53 @@ export async function POST(request: Request) {
                         }
                     }
 
+                    const dumpPath = path.join(templatePath, 'dump.sql');
+                    let hasDump = false;
+                    if (fs.existsSync(dumpPath)) {
+                        hasDump = true;
+                        sendLog('info', `Found database dump in template. Restoring database...`);
+                        try {
+                            await new Promise<void>((resolve, reject) => {
+                                const readStream = fs.createReadStream(dumpPath);
+                                const proc = spawn('docker', ['exec', '-i', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', '-d', dbName], {});
+
+                                readStream.pipe(proc.stdin!);
+
+                                let stderr = '';
+                                proc.stderr?.on('data', chunk => {
+                                    stderr += chunk.toString();
+                                });
+
+                                proc.on('close', code => {
+                                    if (code === 0) {
+                                        resolve();
+                                    } else {
+                                        reject(new Error(`Database restore failed with exit code ${code}: ${stderr}`));
+                                    }
+                                });
+
+                                proc.on('error', err => reject(err));
+                            });
+                            sendLog('info', `Database restore completed successfully.`);
+                        } catch (restoreErr: any) {
+                            sendLog('stderr', `Database restore failed: ${restoreErr.message}`);
+                            throw restoreErr;
+                        }
+                    }
+
                     // Step 2: Copy template
                     sendLog('info', `[2/6] Copying Odoo template files to clients/${containerName}...`);
                     await fs.copy(templatePath, clientDir);
 
                     // Step 3: Customize configuration
                     sendLog('info', `[3/6] Customizing docker-compose.yml and odoo.conf files...`);
-                    
+
                     // docker-compose.yml
                     const composePath = path.join(clientDir, 'docker-compose.yml');
                     let composeContent = await fs.readFile(composePath, 'utf8');
                     composeContent = composeContent.replace(/container_name: .*/, `container_name: ${containerName}`);
                     composeContent = composeContent.replace(/"\d+:(\d+)"/, `"${port}:$1"`);
-                    
+
                     const volumeName = `odoo-web-data-${port}`;
                     composeContent = composeContent.replace(/odoo-web-data-\d+/g, volumeName);
 
@@ -248,6 +294,12 @@ export async function POST(request: Request) {
                             confContent += `\ndb_host = db\n`;
                         } else {
                             confContent = confContent.replace(/db_host = .*/, `db_host = db`);
+                        }
+
+                        if (!confContent.includes('proxy_mode =')) {
+                            confContent += `\nproxy_mode = True\n`;
+                        } else {
+                            confContent = confContent.replace(/proxy_mode = .*/, `proxy_mode = True`);
                         }
 
                         const systemAddons = '/usr/lib/python3/dist-packages/odoo/addons';
@@ -277,7 +329,7 @@ export async function POST(request: Request) {
                         last_health_check: new Date().toISOString(),
                         client_name: clientName,
                         domain: domain,
-                        version: version
+                        version: resolvedVersion
                     };
                     await registry.addInstance(newRecord);
 
@@ -308,49 +360,53 @@ export async function POST(request: Request) {
                     }
 
                     // ── STEP 5a: Install standard Odoo modules (FATAL if fails) ──────────
-                    sendLog('info', `[5/6] Phase 1 — Installing core Odoo modules (${coreModules.size} modules) sequentially to prevent memory exhaustion...`);
-                    
-                    // Always install 'base' first
-                    sendLog('info', `  → Installing foundation: base`);
-                    try {
-                        await runCommandStream(
-                            'docker',
-                            ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', 'base',
-                             '--stop-after-init', '--no-http', '--without-demo=all'],
-                            {},
-                            handleOutput
-                        );
-                    } catch (baseErr: any) {
-                        sendLog('error', `Installation of base foundation module FAILED. Fetching logs...`);
-                        sendLog('error', `This error (often exit code 255) usually means Odoo crashed on startup or was terminated abruptly by the OS (e.g. killed by the Out-Of-Memory / OOM killer due to insufficient server RAM).`);
-                        sendLog('info', `Please verify that your database is running and that your server has enough RAM (consider adding a swap file if memory is low).`);
-                        try {
-                            await runCommandStream('docker', ['logs', '--tail', '100', containerName], {}, handleOutput);
-                        } catch { /* ignore */ }
-                        throw baseErr;
-                    }
+                    if (hasDump) {
+                        sendLog('info', `[5/6] Phase 1 — Database was restored from template dump. Skipping foundation installation.`);
+                    } else {
+                        sendLog('info', `[5/6] Phase 1 — Installing core Odoo modules (${coreModules.size} modules) sequentially to prevent memory exhaustion...`);
 
-                    // Install the remaining core modules one by one
-                    const remainingCore = Array.from(coreModules).filter(m => m !== 'base');
-                    for (const mod of remainingCore) {
-                        sendLog('info', `  → Installing core module: ${mod}`);
+                        // Always install 'base' first
+                        sendLog('info', `  → Installing foundation: base`);
                         try {
                             await runCommandStream(
                                 'docker',
-                                ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', mod,
-                                 '--stop-after-init', '--no-http', '--without-demo=all'],
+                                ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', 'base',
+                                    '--stop-after-init', '--no-http', '--without-demo=all'],
                                 {},
                                 handleOutput
                             );
-                        } catch (coreErr: any) {
-                            sendLog('error', `Installation of core module "${mod}" FAILED. Fetching logs...`);
+                        } catch (baseErr: any) {
+                            sendLog('error', `Installation of base foundation module FAILED. Fetching logs...`);
+                            sendLog('error', `This error (often exit code 255) usually means Odoo crashed on startup or was terminated abruptly by the OS (e.g. killed by the Out-Of-Memory / OOM killer due to insufficient server RAM).`);
+                            sendLog('info', `Please verify that your database is running and that your server has enough RAM (consider adding a swap file if memory is low).`);
                             try {
                                 await runCommandStream('docker', ['logs', '--tail', '100', containerName], {}, handleOutput);
                             } catch { /* ignore */ }
-                            throw coreErr;
+                            throw baseErr;
                         }
+
+                        // Install the remaining core modules one by one
+                        const remainingCore = Array.from(coreModules).filter(m => m !== 'base');
+                        for (const mod of remainingCore) {
+                            sendLog('info', `  → Installing core module: ${mod}`);
+                            try {
+                                await runCommandStream(
+                                    'docker',
+                                    ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', mod,
+                                        '--stop-after-init', '--no-http', '--without-demo=all'],
+                                    {},
+                                    handleOutput
+                                );
+                            } catch (coreErr: any) {
+                                sendLog('error', `Installation of core module "${mod}" FAILED. Fetching logs...`);
+                                try {
+                                    await runCommandStream('docker', ['logs', '--tail', '100', containerName], {}, handleOutput);
+                                } catch { /* ignore */ }
+                                throw coreErr;
+                            }
+                        }
+                        sendLog('info', `Phase 1 complete — all core modules successfully installed.`);
                     }
-                    sendLog('info', `Phase 1 complete — all core modules successfully installed.`);
 
                     // ── STEP 5b: Install OCA/custom modules (BEST-EFFORT, one by one) ───
                     if (ocaModules.size > 0) {
@@ -363,7 +419,7 @@ export async function POST(request: Request) {
                                 await runCommandStream(
                                     'docker',
                                     ['exec', '-e', 'PYTHONUNBUFFERED=1', containerName, 'odoo', '-d', dbName, '-i', mod,
-                                     '--stop-after-init', '--no-http', '--without-demo=all'],
+                                        '--stop-after-init', '--no-http', '--without-demo=all'],
                                     {},
                                     handleOutput
                                 );

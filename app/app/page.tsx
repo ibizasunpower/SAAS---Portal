@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, RefreshCw, LayoutDashboard, List, Grid, Trash2, Sparkles } from "lucide-react";
+import { Plus, RefreshCw, LayoutDashboard, List, Grid, Trash2, Sparkles, Loader2 } from "lucide-react";
 import Link from "next/link";
 import InstanceTable from "@/components/InstanceTable";
 import { InstanceCard } from "@/components/InstanceCard";
@@ -24,6 +24,13 @@ export default function Dashboard() {
   // Delete Modal State (Hoisted from Table)
   const [deleteInstance, setDeleteInstance] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Template Modal State
+  const [templateInstance, setTemplateInstance] = useState<any | null>(null);
+  const [templateName, setTemplateName] = useState("");
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
+  const [templateError, setTemplateError] = useState("");
+  const [templateSuccess, setTemplateSuccess] = useState(false);
 
   const fetchInstances = async () => {
     setLoading(true);
@@ -54,6 +61,41 @@ export default function Dashboard() {
 
   const handleBackup = (instance: any) => {
     window.location.href = `/api/instances/${instance.id}/backup`;
+  };
+
+  const handleConfirmCreateTemplate = async () => {
+    if (!templateInstance || !templateName) return;
+    setIsCreatingTemplate(true);
+    setTemplateError("");
+    setTemplateSuccess(false);
+
+    try {
+      const response = await fetch("/api/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instanceId: templateInstance.id,
+          templateName: templateName,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create template");
+      }
+
+      setTemplateSuccess(true);
+      setTimeout(() => {
+        setTemplateInstance(null);
+        setTemplateName("");
+        setTemplateSuccess(false);
+      }, 2000);
+    } catch (error: any) {
+      console.error(error);
+      setTemplateError(error.message || "Failed to create template.");
+    } finally {
+      setIsCreatingTemplate(false);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -177,6 +219,7 @@ export default function Dashboard() {
               onLogs={handleLogs}
               onDelete={handleDeleteParams}
               onBackup={handleBackup}
+              onCreateTemplate={setTemplateInstance}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -187,6 +230,7 @@ export default function Dashboard() {
                   onLogs={handleLogs}
                   onDelete={handleDeleteParams}
                   onBackup={handleBackup}
+                  onCreateTemplate={setTemplateInstance}
                 />
               ))}
               {instances.length === 0 && (
@@ -219,6 +263,79 @@ export default function Dashboard() {
           onClose={() => !isDeleting && setDeleteInstance(null)}
           onConfirm={handleConfirmDelete}
         />
+
+        {templateInstance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+              <h3 className="text-xl font-bold text-white mb-2">Create Custom Template</h3>
+              <p className="text-zinc-400 text-sm mb-4">
+                Create a reusable template from <strong>{(templateInstance.names[0] || '').replace('/', '')}</strong>. 
+                This will save the Odoo directory configuration and database data.
+              </p>
+
+              {templateError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm mb-4">
+                  {templateError}
+                </div>
+              )}
+
+              {templateSuccess && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-3 rounded-lg text-sm mb-4">
+                  Template created successfully!
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-zinc-300">Template Name</label>
+                  <input
+                    type="text"
+                    required
+                    disabled={isCreatingTemplate || templateSuccess}
+                    pattern="[a-z0-9-]+"
+                    title="Lowercase letters, numbers and hyphens only"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-600 transition-all text-sm"
+                    placeholder="e.g. odoo18-my-custom-template"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                  />
+                  <p className="text-[10px] text-zinc-500">Lowercase letters, numbers, and hyphens only.</p>
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <button
+                    type="button"
+                    disabled={isCreatingTemplate}
+                    onClick={() => {
+                      setTemplateInstance(null);
+                      setTemplateName("");
+                      setTemplateError("");
+                      setTemplateSuccess(false);
+                    }}
+                    className="px-4 py-2 text-zinc-400 hover:text-white transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isCreatingTemplate || !templateName || templateSuccess}
+                    onClick={handleConfirmCreateTemplate}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-5 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm"
+                  >
+                    {isCreatingTemplate ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Template"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

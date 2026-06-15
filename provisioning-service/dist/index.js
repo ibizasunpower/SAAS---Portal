@@ -154,6 +154,12 @@ app.post('/api/provision', async (req, res) => {
             else {
                 confContent = confContent.replace(/db_host = .*/, `db_host = db`);
             }
+            if (!confContent.includes('proxy_mode =')) {
+                confContent += `\nproxy_mode = True\n`;
+            }
+            else {
+                confContent = confContent.replace(/proxy_mode = .*/, `proxy_mode = True`);
+            }
             const systemAddons = '/usr/lib/python3/dist-packages/odoo/addons';
             if (confContent.includes('addons_path =')) {
                 if (!confContent.includes(systemAddons)) {
@@ -218,7 +224,7 @@ app.post('/api/provision', async (req, res) => {
         logger_1.logger.info('DATABASE', `Running schema CLI initialization inside ${containerName}...`);
         try {
             const exec = await container.exec({
-                Cmd: ['odoo', '-d', dbName, '-i', 'base,web', '--stop-after-init', '--no-http'],
+                Cmd: ['odoo', '-d', dbName, '-i', 'base,web', '--stop-after-init', '--no-http', '--without-demo=all'],
                 AttachStdout: true,
                 AttachStderr: true
             });

@@ -167,6 +167,12 @@ app.post('/api/provision', async (req, res) => {
                 confContent = confContent.replace(/db_host = .*/, `db_host = db`);
             }
 
+            if (!confContent.includes('proxy_mode =')) {
+                confContent += `\nproxy_mode = True\n`;
+            } else {
+                confContent = confContent.replace(/proxy_mode = .*/, `proxy_mode = True`);
+            }
+
             const systemAddons = '/usr/lib/python3/dist-packages/odoo/addons';
             if (confContent.includes('addons_path =')) {
                 if (!confContent.includes(systemAddons)) {
