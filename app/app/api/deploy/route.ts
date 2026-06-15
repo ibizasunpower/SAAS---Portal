@@ -232,18 +232,22 @@ export async function POST(request: Request) {
                                 const readStream = fs.createReadStream(dumpPath);
                                 const proc = spawn('docker', ['exec', '-i', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', '-d', dbName], {});
 
+                                // Pipe dump into psql and ensure stdin is closed when stream ends
                                 readStream.pipe(proc.stdin!);
+                                readStream.on('end', () => {
+                                    if (proc.stdin) proc.stdin.end();
+                                });
 
                                 let stderr = '';
-                                proc.stderr?.on('data', chunk => {
-                                    stderr += chunk.toString();
-                                });
+                                let stdout = '';
+                                proc.stderr?.on('data', chunk => { stderr += chunk.toString(); });
+                                proc.stdout?.on('data', chunk => { stdout += chunk.toString(); }); // Drain stdout
 
                                 proc.on('close', code => {
                                     if (code === 0) {
                                         resolve();
                                     } else {
-                                        reject(new Error(`Database restore failed with exit code ${code}: ${stderr}`));
+                                        reject(new Error(`Database restore failed with exit code ${code}: ${stderr || stdout}`));
                                     }
                                 });
 
