@@ -6,7 +6,7 @@ import { registry } from '@/lib/registry';
 import { logger } from '@/lib/logger';
 import fs from 'fs-extra';
 import path from 'path';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import crypto from 'crypto';
 
 // Configuration
@@ -23,7 +23,9 @@ function runCommandStream(
     onLog: (data: string, type: 'stdout' | 'stderr') => void
 ): Promise<void> {
     return new Promise((resolve, reject) => {
-        const proc = spawn(command, args, options);
+        // Ensure PATH is passed so Docker and other binaries are found
+        const mergedOptions = { env: { ...process.env }, ...(options || {}) };
+        const proc = spawn(command, args, mergedOptions);
 
         proc.stdout?.on('data', (chunk) => {
             onLog(chunk.toString('utf8'), 'stdout');
@@ -54,8 +56,32 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { clientName, version, domain, selected_modules, template } = body;
+        let { clientName, version, domain, selected_modules, template, installAllTemplateModules } = body;
 
+        // Load all module IDs from the template configuration
+        const modulesConfigPath = path.join(process.cwd(), 'modules_config.json');
+        let allTemplateModules: string[] = [];
+        if (await fs.pathExists(modulesConfigPath)) {
+            try {
+                const modulesConfig = await fs.readJson(modulesConfigPath);
+                const versionCfg = modulesConfig[version] || modulesConfig['18'] || {};
+                for (const catKey of Object.keys(versionCfg)) {
+                    const cat = versionCfg[catKey];
+                    if (Array.isArray(cat.modules)) {
+                        cat.modules.forEach((m: any) => {
+                            if (m.id) allTemplateModules.push(m.id);
+                        });
+                    }
+                }
+            } catch {
+                // ignore parse errors
+            }
+        }
+        if ((Array.isArray(selected_modules) && selected_modules.length === 0) || installAllTemplateModules) {
+            selected_modules = allTemplateModules;
+            console.log('No explicit modules supplied – installing all modules from the template.');
+        }
+        
         // Validation Checks (Fast failures)
         if (!clientName || !version || !domain) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -203,23 +229,50 @@ export async function POST(request: Request) {
                     } catch (readErr: any) {
                         sendLog('stderr', `Warning: Failed to load modules configuration details: ${readErr.message}`);
                     }
+        // ------------------------------------------------
+        // Generate a requirements.txt file in the client directory for reference
+        try {
+            const reqPath = path.join(clientDir, 'requirements.txt');
+            const reqContent = Array.from(pythonPackagesToInstall).sort().join('\n');
+            await fs.writeFile(reqPath, reqContent, 'utf8');
+            sendLog('info', `Generated requirements.txt (${pythonPackagesToInstall.size} packages) for ${clientName}.`);
+        } catch (reqErr: any) {
+            sendLog('stderr', `Failed to write requirements.txt: ${reqErr.message}`);
+        }
 
                     // Step 1: Pre-creating database
                     sendLog('info', `[1/6] Pre-creating PostgreSQL database: ${dbName}...`);
                     try {
-                        await runCommandStream(
-                            'docker',
-                            ['exec', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', 'postgres', '-c', `CREATE DATABASE "${dbName}";`],
-                            {},
-                            handleOutput
-                        );
-                        sendLog('info', `Successfully pre-created database ${dbName}.`);
-                    } catch (dbErr: any) {
-                        if (dbErr.message.includes('already exists')) {
+                        // First check if the database already exists
+                        let exists = false;
+                        await new Promise<void>((resolve, reject) => {
+                            const checkProc = spawn('docker', ['exec', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', '-tAc', `SELECT 1 FROM pg_database WHERE datname='${dbName}';`], { env: { ...process.env } });
+                            let stdout = '';
+                            checkProc.stdout?.on('data', chunk => { stdout += chunk.toString(); });
+                            checkProc.stderr?.on('data', chunk => { });
+                            checkProc.on('close', code => {
+                                if (code === 0 && stdout.trim() === '1') {
+                                    exists = true;
+                                    resolve();
+                                } else {
+                                    resolve(); // treat non‑zero as not existing (error will be handled later)
+                                }
+                            });
+                            checkProc.on('error', err => reject(err));
+                        });
+                        if (exists) {
                             sendLog('info', `Database ${dbName} already exists, reusing.`);
                         } else {
-                            throw new Error(`Failed to create database: ${dbErr.message}`);
+                            await runCommandStream(
+                                'docker',
+                                ['exec', '-e', `PGPASSWORD=${PG_PASSWORD}`, DB_CONTAINER, 'psql', '-U', 'odoo', 'postgres', '-c', `CREATE DATABASE \"${dbName}\";`],
+                                {},
+                                handleOutput
+                            );
+                            sendLog('info', `Successfully pre-created database ${dbName}.`);
                         }
+                    } catch (dbErr: any) {
+                        throw new Error(`Failed to create database: ${dbErr.message}`);
                     }
 
                     const dumpPath = path.join(templatePath, 'dump.sql');
@@ -345,8 +398,27 @@ export async function POST(request: Request) {
                         { cwd: clientDir },
                         handleOutput
                     );
+                    // ------------------------------------------------
+                    // Ensure the JWT library is installed even if the container
+                    // existed from a previous deployment (the pip install step
+                    // later may be skipped when pythonPackagesToInstall is empty).
+                    // This guarantees the `auth_jwt` module can load.
+                    try {
+                        await runCommandStream(
+                            'docker',
+                            ['exec', '-u', 'root', containerName, 'pip3', 'install', '--upgrade', 'PyJWT'],
+                            {},
+                            handleOutput
+                        );
+                        sendLog('info', 'Unconditional PyJWT installation succeeded.');
+                    } catch (jwtErr: any) {
+                        sendLog('stderr', `Failed to install PyJWT unconditionally: ${jwtErr.message}`);
+                    }
 
                     // Install Python libraries if required
+                    // Ensure JWT library is present for auth_jwt module
+                    // Add PyJWT if not already requested
+                    pythonPackagesToInstall.add('PyJWT');
                     if (pythonPackagesToInstall.size > 0) {
                         const packagesList = Array.from(pythonPackagesToInstall);
                         sendLog('info', `Installing required Python libraries inside container: ${packagesList.join(', ')}...`);
@@ -579,5 +651,31 @@ export async function POST(request: Request) {
     } catch (error: any) {
         await logger.error('CREATION', 'Stream initiation crashed', { error: error.message, instanceId });
         return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+// GET /api/requirements/generate?odooVersion=19&db=tenant_test
+export async function GET(req: Request) {
+    const url = new URL(req.url);
+    const version = url.searchParams.get('odooVersion') ?? '19';
+    const db = url.searchParams.get('db');
+    if (!db) {
+        return NextResponse.json({ error: 'Missing db parameter' }, { status: 400 });
+    }
+    const image = `odoo:${version}.0`;
+    try {
+        const raw = execSync(`docker run --rm ${image} sh -c "pip3 freeze"`, { encoding: 'utf8' }).trim();
+        const requirements = raw
+            .split('\n')
+            .map(l => l.trim())
+            .filter(Boolean)
+            .join('\n');
+        const templateDir = path.join(BASE_DIR, 'templates', `odoo${version}`);
+        const filePath = path.join(templateDir, 'requirements.txt');
+        fs.mkdirSync(templateDir, { recursive: true });
+        fs.writeFileSync(filePath, requirements, 'utf8');
+        return NextResponse.json({ success: true, filePath, content: requirements });
+    } catch (e: any) {
+        console.error('Requirements generation error', e);
+        return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
