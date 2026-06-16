@@ -16,6 +16,9 @@ services:
     volumes:
       - ./addons:/mnt/extra-addons
       - ../../common18/custom:/mnt/common18/custom
+      - ../../common18/custom_paid:/mnt/common18/custom_paid
+      - ../../common18/custom-paid:/mnt/common18/custom-paid
+      - "../../common18/custom paid:/mnt/common18/custom paid"
       - ./config:/etc/odoo
       - odoo-web-data-8001:/var/lib/odoo
     environment:

@@ -2,9 +2,19 @@ const fs = require('fs-extra');
 const path = require('path');
 
 // Root directories to scan for addons
-const SCAN_PATHS = {
-    "18": process.env.ADDONS_PATH_18 || "/home/portal/common18/custom",
-    "19": process.env.ADDONS_PATH_19 || "/home/portal/common19/custom"
+const SCAN_DIRS = {
+    "18": [
+        { path: "/home/portal/common18/custom", catKey: "custom_oca_addons", name: "Custom OCA addons" },
+        { path: "/home/portal/common18/custom_paid", catKey: "custom_paid_addons", name: "Custom Paid Addons" },
+        { path: "/home/portal/common18/custom-paid", catKey: "custom_paid_addons", name: "Custom Paid Addons" },
+        { path: "/home/portal/common18/custom paid", catKey: "custom_paid_addons", name: "Custom Paid Addons" }
+    ],
+    "19": [
+        { path: "/home/portal/common19/custom", catKey: "custom_oca_addons", name: "Custom OCA addons" },
+        { path: "/home/portal/common19/custom_paid", catKey: "custom_paid_addons", name: "Custom Paid Addons" },
+        { path: "/home/portal/common19/custom-paid", catKey: "custom_paid_addons", name: "Custom Paid Addons" },
+        { path: "/home/portal/common19/custom paid", catKey: "custom_paid_addons", name: "Custom Paid Addons" }
+    ]
 };
 
 // Base config that we always want to include (e.g. core Odoo apps)
@@ -111,126 +121,127 @@ function parseManifest(filePath) {
 async function run() {
     const config = {};
 
-    for (const [version, scanPath] of Object.entries(SCAN_PATHS)) {
-        console.log(`Scanning Odoo ${version} modules in ${scanPath}...`);
-        
+    for (const version of ["18", "19"]) {
         // Initialize with base categories
         config[version] = getBaseCategories();
+        const dirsToScan = SCAN_DIRS[version];
+        let totalModules = 0;
 
-        if (!await fs.pathExists(scanPath)) {
-            console.warn(`Warning: Scan path for Odoo ${version} does not exist: ${scanPath}. Skipping.`);
-            continue;
-        }
+        for (const dirInfo of dirsToScan) {
+            const { path: scanPath, catKey, name: catDisplayName } = dirInfo;
 
-        try {
-            const items = await fs.readdir(scanPath);
-            let moduleCount = 0;
+            if (!await fs.pathExists(scanPath)) {
+                continue;
+            }
 
-            for (const item of items) {
-                const itemPath = path.join(scanPath, item);
-                const stat = await fs.stat(itemPath);
+            console.log(`Scanning Odoo ${version} modules in ${scanPath}...`);
+            try {
+                const items = await fs.readdir(scanPath);
+                let moduleCount = 0;
 
-                if (!stat.isDirectory()) continue;
+                for (const item of items) {
+                    const itemPath = path.join(scanPath, item);
+                    const stat = await fs.stat(itemPath);
 
-                // Check if it's an Odoo module directly (Level 1)
-                const manifestPath = path.join(itemPath, '__manifest__.py');
-                if (await fs.pathExists(manifestPath)) {
-                    const manifest = parseManifest(manifestPath);
-                    if (manifest) {
-                        const catKey = "custom_addons";
-                        if (!config[version][catKey]) {
-                            config[version][catKey] = {
-                                name: "Custom Addons",
-                                description: "Addons directly placed in the custom folder.",
-                                modules: []
-                            };
+                    if (!stat.isDirectory()) continue;
+
+                    // Check if it's an Odoo module directly (Level 1)
+                    const manifestPath = path.join(itemPath, '__manifest__.py');
+                    if (await fs.pathExists(manifestPath)) {
+                        const manifest = parseManifest(manifestPath);
+                        if (manifest) {
+                            if (!config[version][catKey]) {
+                                config[version][catKey] = {
+                                    name: catDisplayName,
+                                    description: `${catDisplayName} modules.`,
+                                    modules: []
+                                };
+                            }
+                            const exists = config[version][catKey].modules.some(m => m.id === item);
+                            if (!exists) {
+                                config[version][catKey].modules.push({
+                                    id: item,
+                                    name: manifest.name,
+                                    description: manifest.summary,
+                                    depends: manifest.depends,
+                                    external_dependencies: manifest.external_dependencies,
+                                    requirements: manifest.requirements
+                                });
+                                moduleCount++;
+                            }
                         }
-                        const exists = config[version][catKey].modules.some(m => m.id === item);
-                        if (!exists) {
-                            config[version][catKey].modules.push({
-                                id: item,
-                                name: manifest.name,
-                                description: manifest.summary,
-                                depends: manifest.depends,
-                                external_dependencies: manifest.external_dependencies,
-                                requirements: manifest.requirements
-                            });
-                            moduleCount++;
-                        }
-                    }
-                } else {
-                    // Check if it's a repository containing nested Odoo modules (Level 2)
-                    // E.g. search inside `scanPath/item/*`
-                    try {
-                        const subItems = await fs.readdir(itemPath);
-                        const repoName = item;
-                        const catKey = slugify(repoName);
-                        const displayName = repoName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    } else {
+                        // Check if it's a repository containing nested Odoo modules (Level 2)
+                        // E.g. search inside `scanPath/item/*`
+                        try {
+                            const subItems = await fs.readdir(itemPath);
+                            for (const subItem of subItems) {
+                                const subItemPath = path.join(itemPath, subItem);
+                                const subStat = await fs.stat(subItemPath);
 
-                        for (const subItem of subItems) {
-                            const subItemPath = path.join(itemPath, subItem);
-                            const subStat = await fs.stat(subItemPath);
+                                if (subStat.isDirectory()) {
+                                    const subManifestPath = path.join(subItemPath, '__manifest__.py');
+                                    if (await fs.pathExists(subManifestPath)) {
+                                        const manifest = parseManifest(subManifestPath);
+                                        if (manifest) {
+                                            // Index the nested module under the repo's catKey
+                                            if (!config[version][catKey]) {
+                                                config[version][catKey] = {
+                                                    name: catDisplayName,
+                                                    description: `${catDisplayName} modules.`,
+                                                    modules: []
+                                                };
+                                            }
+                                            const exists = config[version][catKey].modules.some(m => m.id === subItem);
+                                            if (!exists) {
+                                                config[version][catKey].modules.push({
+                                                    id: subItem,
+                                                    name: manifest.name,
+                                                    description: manifest.summary,
+                                                    depends: manifest.depends,
+                                                    external_dependencies: manifest.external_dependencies,
+                                                    requirements: manifest.requirements
+                                                });
+                                                moduleCount++;
+                                            }
 
-                            if (subStat.isDirectory()) {
-                                const subManifestPath = path.join(subItemPath, '__manifest__.py');
-                                if (await fs.pathExists(subManifestPath)) {
-                                    const manifest = parseManifest(subManifestPath);
-                                    if (manifest) {
-                                        // Index the nested module under the repo's catKey
-                                        if (!config[version][catKey]) {
-                                            config[version][catKey] = {
-                                                name: displayName,
-                                                description: `Addons from the ${repoName} repository.`,
-                                                modules: []
-                                            };
-                                        }
-                                        const exists = config[version][catKey].modules.some(m => m.id === subItem);
-                                        if (!exists) {
-                                            config[version][catKey].modules.push({
-                                                id: subItem,
-                                                name: manifest.name,
-                                                description: manifest.summary,
-                                                depends: manifest.depends,
-                                                external_dependencies: manifest.external_dependencies,
-                                                requirements: manifest.requirements
-                                            });
-                                            moduleCount++;
-                                        }
+                                            // Create a relative symbolic link at the root level of custom directory
+                                            // so Odoo container can load it
+                                            const target = `./${item}/${subItem}`;
+                                            const linkPath = path.join(scanPath, subItem);
 
-                                        // Create a relative symbolic link at the root level of custom directory
-                                        // so Odoo container can load it
-                                        const target = `./${item}/${subItem}`;
-                                        const linkPath = path.join(scanPath, subItem);
-
-                                        let linkExists = false;
-                                        try {
-                                            fs.lstatSync(linkPath);
-                                            linkExists = true;
-                                        } catch (e) {
-                                            // doesn't exist
-                                        }
-
-                                        if (!linkExists) {
+                                            let linkExists = false;
                                             try {
-                                                fs.symlinkSync(target, linkPath);
-                                                console.log(`Created symlink: ${subItem} -> ${target}`);
-                                            } catch (err) {
-                                                console.error(`Failed to create symlink for ${subItem}:`, err.message);
+                                                fs.lstatSync(linkPath);
+                                                linkExists = true;
+                                            } catch (e) {
+                                                // doesn't exist
+                                            }
+
+                                            if (!linkExists) {
+                                                try {
+                                                    fs.symlinkSync(target, linkPath);
+                                                    console.log(`Created symlink: ${subItem} -> ${target}`);
+                                                } catch (err) {
+                                                    console.error(`Failed to create symlink for ${subItem}:`, err.message);
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+                        } catch (readErr) {
+                            console.error(`Failed to read nested folder ${itemPath}:`, readErr.message);
                         }
-                    } catch (readErr) {
-                        console.error(`Failed to read nested folder ${itemPath}:`, readErr.message);
                     }
                 }
+                console.log(`Successfully indexed ${moduleCount} custom modules from ${scanPath}.`);
+                totalModules += moduleCount;
+            } catch (err) {
+                console.error(`Error scanning path ${scanPath}:`, err.message);
             }
-            console.log(`Successfully indexed ${moduleCount} custom modules for Odoo ${version}.`);
-        } catch (err) {
-            console.error(`Error scanning path ${scanPath}:`, err.message);
         }
+        console.log(`Total Odoo ${version} modules indexed: ${totalModules}`);
     }
 
     const outputPath = path.join(__dirname, 'modules_config.json');
