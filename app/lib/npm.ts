@@ -32,23 +32,32 @@ export class NpmClient {
         }
     }
 
-    async createProxyHost(domain: string, forwardHost: string, forwardPort: number) {
+    async createProxyHost(
+        domain: string,
+        forwardHost: string,
+        forwardPort: number,
+        options?: {
+            scheme?: 'http' | 'https';
+            ssl?: boolean;
+            letsEncryptAgree?: boolean;
+        }
+    ) {
         const token = await this.getToken();
         if (!token) return null;
 
+        const { scheme = 'http', ssl = false, letsEncryptAgree = false } = options || {};
+
         try {
-            // Check if exists first to avoid duplicate errors? NPM might handle it or error.
-            // Let's just try to create.
             const res = await axios.post(`${NPM_HOST}/api/nginx/proxy-hosts`, {
                 domain_names: [domain],
-                forward_scheme: "http",
+                forward_scheme: scheme,
                 forward_host: forwardHost,
                 forward_port: forwardPort,
                 access_list_id: 0,
-                certificate_id: 0, // No SSL by default, user can enable in UI or we can add logic later
-                ssl_forced: false,
+                certificate_id: 0, // 0 means NPM will use Let’s Encrypt if ssl_forced and letsencrypt_agree are true
+                ssl_forced: ssl,
                 meta: {
-                    letsencrypt_agree: false,
+                    letsencrypt_agree: letsEncryptAgree,
                     dns_challenge: false
                 },
                 advanced_config: `client_max_body_size 200m;\n\nproxy_read_timeout 720s;\nproxy_connect_timeout 720s;\nproxy_send_timeout 720s;\n\nproxy_set_header Host $host;\nproxy_set_header X-Real-IP $remote_addr;\nproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\nproxy_set_header X-Forwarded-Proto $scheme;\n\n# Websocket support (important for Odoo chatter / notifications)\nproxy_set_header Upgrade $http_upgrade;\nproxy_set_header Connection "upgrade";`,
@@ -63,7 +72,7 @@ export class NpmClient {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            return res.data; // Returns the created object, including 'id'
+            return res.data;
         } catch (error: any) {
             console.error(`NPM Create Host Failed for ${domain}:`, error.response?.data || error.message);
             throw new Error(`Failed to create proxy host: ${error.message}`);
