@@ -15,6 +15,38 @@
         {
           "id": "sale_management",
           "name": "Sales Management"
+        },
+        {
+          "id": "contacts",
+          "name": "Contacts"
+        },
+        {
+          "id": "crm_iap_enrich",
+          "name": "Lead Enrichment"
+        },
+        {
+          "id": "crm_iap_mine",
+          "name": "Lead Generation"
+        },
+        {
+          "id": "crm_industry",
+          "name": "CRM Industry"
+        },
+        {
+          "id": "crm_livechat",
+          "name": "CRM Livechat"
+        },
+        {
+          "id": "crm_mail_plugin",
+          "name": "CRM Mail Plugin"
+        },
+        {
+          "id": "crm_sms",
+          "name": "CRM SMS"
+        },
+        {
+          "id": "delivery",
+          "name": "Delivery Costs"
         }
       ]
     },
@@ -33,6 +65,418 @@
         {
           "id": "mrp",
           "name": "Manufacturing"
+        },
+        {
+          "id": "mrp_account",
+          "name": "MRP Accounting"
+        },
+        {
+          "id": "mrp_landed_costs",
+          "name": "MRP Landed Costs"
+        },
+        {
+          "id": "mrp_repair",
+          "name": "MRP Repair"
+        },
+        {
+          "id": "fleet",
+          "name": "Fleet"
+        },
+        {
+          "id": "hr_fleet",
+          "name": "HR Fleet"
+        }
+      ]
+    },
+    "accounting": {
+      "name": "Invoicing & Accounting",
+      "description": "Core Odoo Invoicing and Accounting apps.",
+      "modules": [
+        {
+          "id": "account",
+          "name": "Invoicing"
+        },
+        {
+          "id": "analytic",
+          "name": "Analytic Accounting"
+        },
+        {
+          "id": "payment",
+          "name": "Payment Providers"
+        },
+        {
+          "id": "payment_mollie",
+          "name": "Mollie Payment Provider"
+        },
+        {
+          "id": "payroll",
+          "name": "Payroll"
+        },
+        {
+          "id": "payroll_account",
+          "name": "Payroll Accounting"
+        }
+      ]
+    },
+    "human_resources": {
+      "name": "Human Resources & Payroll",
+      "description": "Standard Odoo HR, Attendance, Timesheets, and Leave Management.",
+      "modules": [
+        {
+          "id": "hr",
+          "name": "Employees"
+        },
+        {
+          "id": "hr_attendance",
+          "name": "Attendances"
+        },
+        {
+          "id": "hr_calendar",
+          "name": "Employee Calendar"
+        },
+        {
+          "id": "hr_contract",
+          "name": "Employee Contracts"
+        },
+        {
+          "id": "hr_expense",
+          "name": "Expenses"
+        },
+        {
+          "id": "hr_gamification",
+          "name": "HR Gamification"
+        },
+        {
+          "id": "hr_holidays",
+          "name": "Time Off"
+        },
+        {
+          "id": "hr_hourly_cost",
+          "name": "Hourly Cost"
+        },
+        {
+          "id": "hr_livechat",
+          "name": "HR Livechat"
+        },
+        {
+          "id": "hr_maintenance",
+          "name": "HR Maintenance"
+        },
+        {
+          "id": "hr_org_chart",
+          "name": "Org Chart"
+        },
+        {
+          "id": "hr_skills",
+          "name": "Employee Skills"
+        },
+        {
+          "id": "hr_skills_slides",
+          "name": "Skills Slides"
+        },
+        {
+          "id": "hr_skills_survey",
+          "name": "Skills Survey"
+        },
+        {
+          "id": "hr_timesheet",
+          "name": "Timesheets"
+        }
+      ]
+    },
+    "marketing_pos_website": {
+      "name": "Marketing, POS & Website",
+      "description": "Point of Sale, eCommerce, Events, and Email Marketing.",
+      "modules": [
+        {
+          "id": "point_of_sale",
+          "name": "Point of Sale"
+        },
+        {
+          "id": "pos_epson_printer",
+          "name": "POS Epson Printer"
+        },
+        {
+          "id": "pos_hr",
+          "name": "POS HR"
+        },
+        {
+          "id": "pos_loyalty",
+          "name": "POS Loyalty"
+        },
+        {
+          "id": "pos_mrp",
+          "name": "POS MRP"
+        },
+        {
+          "id": "pos_online_payment",
+          "name": "POS Online Payment"
+        },
+        {
+          "id": "pos_sale",
+          "name": "POS Sale"
+        },
+        {
+          "id": "pos_sale_loyalty",
+          "name": "POS Sale Loyalty"
+        },
+        {
+          "id": "pos_sale_margin",
+          "name": "POS Sale Margin"
+        },
+        {
+          "id": "pos_sms",
+          "name": "POS SMS"
+        },
+        {
+          "id": "loyalty",
+          "name": "Coupons & Loyalty"
+        },
+        {
+          "id": "mass_mailing",
+          "name": "Email Marketing"
+        },
+        {
+          "id": "mass_mailing_crm",
+          "name": "Mass Mailing CRM"
+        },
+        {
+          "id": "mass_mailing_crm_sms",
+          "name": "Mass Mailing CRM SMS"
+        },
+        {
+          "id": "mass_mailing_event",
+          "name": "Mass Mailing Event"
+        },
+        {
+          "id": "mass_mailing_event_sms",
+          "name": "Mass Mailing Event SMS"
+        },
+        {
+          "id": "mass_mailing_event_track",
+          "name": "Mass Mailing Track"
+        },
+        {
+          "id": "mass_mailing_event_track_sms",
+          "name": "Mass Mailing Track SMS"
+        },
+        {
+          "id": "mass_mailing_sale",
+          "name": "Mass Mailing Sale"
+        },
+        {
+          "id": "mass_mailing_sale_sms",
+          "name": "Mass Mailing Sale SMS"
+        },
+        {
+          "id": "mass_mailing_slides",
+          "name": "Mass Mailing Slides"
+        },
+        {
+          "id": "mass_mailing_sms",
+          "name": "SMS Marketing"
+        },
+        {
+          "id": "mass_mailing_themes",
+          "name": "Mass Mailing Themes"
+        },
+        {
+          "id": "marketing_card",
+          "name": "Marketing Cards"
+        },
+        {
+          "id": "event",
+          "name": "Events"
+        },
+        {
+          "id": "event_crm",
+          "name": "Event CRM"
+        },
+        {
+          "id": "event_crm_sale",
+          "name": "Event CRM Sale"
+        },
+        {
+          "id": "event_product",
+          "name": "Event Product"
+        },
+        {
+          "id": "event_sale",
+          "name": "Event Sale"
+        },
+        {
+          "id": "event_sms",
+          "name": "Event SMS"
+        },
+        {
+          "id": "website",
+          "name": "Website"
+        },
+        {
+          "id": "portal",
+          "name": "Portal"
+        },
+        {
+          "id": "portal_rating",
+          "name": "Portal Rating"
+        },
+        {
+          "id": "membership",
+          "name": "Members"
+        }
+      ]
+    },
+    "core_system": {
+      "name": "Core System & Tools",
+      "description": "Standard Odoo internal system modules and technical tools.",
+      "modules": [
+        {
+          "id": "base",
+          "name": "Base"
+        },
+        {
+          "id": "web",
+          "name": "Web"
+        },
+        {
+          "id": "mail",
+          "name": "Discuss"
+        },
+        {
+          "id": "mail_bot",
+          "name": "OdooBot"
+        },
+        {
+          "id": "mail_bot_hr",
+          "name": "OdooBot HR"
+        },
+        {
+          "id": "mail_group",
+          "name": "Mailing Lists"
+        },
+        {
+          "id": "mail_plugin",
+          "name": "Mail Plugin"
+        },
+        {
+          "id": "barcodes",
+          "name": "Barcode"
+        },
+        {
+          "id": "base_address_extended",
+          "name": "Extended Addresses"
+        },
+        {
+          "id": "base_automation",
+          "name": "Automated Actions"
+        },
+        {
+          "id": "base_import",
+          "name": "Import CSV/Excel"
+        },
+        {
+          "id": "base_import_module",
+          "name": "Import Module"
+        },
+        {
+          "id": "base_setup",
+          "name": "Settings"
+        },
+        {
+          "id": "base_sparse_field",
+          "name": "Sparse Fields"
+        },
+        {
+          "id": "base_vat",
+          "name": "VAT"
+        },
+        {
+          "id": "board",
+          "name": "Dashboard"
+        },
+        {
+          "id": "bus",
+          "name": "Instant Messaging Bus"
+        },
+        {
+          "id": "calendar",
+          "name": "Calendar"
+        },
+        {
+          "id": "calendar_sms",
+          "name": "Calendar SMS"
+        },
+        {
+          "id": "data_recycle",
+          "name": "Data Recycle"
+        },
+        {
+          "id": "digest",
+          "name": "Digest Emails"
+        },
+        {
+          "id": "gamification",
+          "name": "Gamification"
+        },
+        {
+          "id": "google_recaptcha",
+          "name": "reCAPTCHA"
+        },
+        {
+          "id": "html_editor",
+          "name": "HTML Editor"
+        },
+        {
+          "id": "http_routing",
+          "name": "Web Routing"
+        },
+        {
+          "id": "iap",
+          "name": "IAP"
+        },
+        {
+          "id": "iap_crm",
+          "name": "IAP CRM"
+        },
+        {
+          "id": "iap_mail",
+          "name": "IAP Mail"
+        },
+        {
+          "id": "im_livechat",
+          "name": "Live Chat"
+        },
+        {
+          "id": "link_tracker",
+          "name": "Link Tracker"
+        },
+        {
+          "id": "maintenance",
+          "name": "Maintenance"
+        },
+        {
+          "id": "microsoft_account",
+          "name": "Microsoft Synchronization"
+        },
+        {
+          "id": "onboarding",
+          "name": "Onboarding"
+        },
+        {
+          "id": "partner_autocomplete",
+          "name": "Partner Autocomplete"
+        },
+        {
+          "id": "phone_validation",
+          "name": "Phone Validation"
+        },
+        {
+          "id": "privacy",
+          "name": "Privacy"
+        },
+        {
+          "id": "privacy_lookup",
+          "name": "Privacy Lookup"
         }
       ]
     }
@@ -53,6 +497,38 @@
         {
           "id": "sale_management",
           "name": "Sales Management"
+        },
+        {
+          "id": "contacts",
+          "name": "Contacts"
+        },
+        {
+          "id": "crm_iap_enrich",
+          "name": "Lead Enrichment"
+        },
+        {
+          "id": "crm_iap_mine",
+          "name": "Lead Generation"
+        },
+        {
+          "id": "crm_industry",
+          "name": "CRM Industry"
+        },
+        {
+          "id": "crm_livechat",
+          "name": "CRM Livechat"
+        },
+        {
+          "id": "crm_mail_plugin",
+          "name": "CRM Mail Plugin"
+        },
+        {
+          "id": "crm_sms",
+          "name": "CRM SMS"
+        },
+        {
+          "id": "delivery",
+          "name": "Delivery Costs"
         }
       ]
     },
@@ -71,6 +547,418 @@
         {
           "id": "mrp",
           "name": "Manufacturing"
+        },
+        {
+          "id": "mrp_account",
+          "name": "MRP Accounting"
+        },
+        {
+          "id": "mrp_landed_costs",
+          "name": "MRP Landed Costs"
+        },
+        {
+          "id": "mrp_repair",
+          "name": "MRP Repair"
+        },
+        {
+          "id": "fleet",
+          "name": "Fleet"
+        },
+        {
+          "id": "hr_fleet",
+          "name": "HR Fleet"
+        }
+      ]
+    },
+    "accounting": {
+      "name": "Invoicing & Accounting",
+      "description": "Core Odoo Invoicing and Accounting apps.",
+      "modules": [
+        {
+          "id": "account",
+          "name": "Invoicing"
+        },
+        {
+          "id": "analytic",
+          "name": "Analytic Accounting"
+        },
+        {
+          "id": "payment",
+          "name": "Payment Providers"
+        },
+        {
+          "id": "payment_mollie",
+          "name": "Mollie Payment Provider"
+        },
+        {
+          "id": "payroll",
+          "name": "Payroll"
+        },
+        {
+          "id": "payroll_account",
+          "name": "Payroll Accounting"
+        }
+      ]
+    },
+    "human_resources": {
+      "name": "Human Resources & Payroll",
+      "description": "Standard Odoo HR, Attendance, Timesheets, and Leave Management.",
+      "modules": [
+        {
+          "id": "hr",
+          "name": "Employees"
+        },
+        {
+          "id": "hr_attendance",
+          "name": "Attendances"
+        },
+        {
+          "id": "hr_calendar",
+          "name": "Employee Calendar"
+        },
+        {
+          "id": "hr_contract",
+          "name": "Employee Contracts"
+        },
+        {
+          "id": "hr_expense",
+          "name": "Expenses"
+        },
+        {
+          "id": "hr_gamification",
+          "name": "HR Gamification"
+        },
+        {
+          "id": "hr_holidays",
+          "name": "Time Off"
+        },
+        {
+          "id": "hr_hourly_cost",
+          "name": "Hourly Cost"
+        },
+        {
+          "id": "hr_livechat",
+          "name": "HR Livechat"
+        },
+        {
+          "id": "hr_maintenance",
+          "name": "HR Maintenance"
+        },
+        {
+          "id": "hr_org_chart",
+          "name": "Org Chart"
+        },
+        {
+          "id": "hr_skills",
+          "name": "Employee Skills"
+        },
+        {
+          "id": "hr_skills_slides",
+          "name": "Skills Slides"
+        },
+        {
+          "id": "hr_skills_survey",
+          "name": "Skills Survey"
+        },
+        {
+          "id": "hr_timesheet",
+          "name": "Timesheets"
+        }
+      ]
+    },
+    "marketing_pos_website": {
+      "name": "Marketing, POS & Website",
+      "description": "Point of Sale, eCommerce, Events, and Email Marketing.",
+      "modules": [
+        {
+          "id": "point_of_sale",
+          "name": "Point of Sale"
+        },
+        {
+          "id": "pos_epson_printer",
+          "name": "POS Epson Printer"
+        },
+        {
+          "id": "pos_hr",
+          "name": "POS HR"
+        },
+        {
+          "id": "pos_loyalty",
+          "name": "POS Loyalty"
+        },
+        {
+          "id": "pos_mrp",
+          "name": "POS MRP"
+        },
+        {
+          "id": "pos_online_payment",
+          "name": "POS Online Payment"
+        },
+        {
+          "id": "pos_sale",
+          "name": "POS Sale"
+        },
+        {
+          "id": "pos_sale_loyalty",
+          "name": "POS Sale Loyalty"
+        },
+        {
+          "id": "pos_sale_margin",
+          "name": "POS Sale Margin"
+        },
+        {
+          "id": "pos_sms",
+          "name": "POS SMS"
+        },
+        {
+          "id": "loyalty",
+          "name": "Coupons & Loyalty"
+        },
+        {
+          "id": "mass_mailing",
+          "name": "Email Marketing"
+        },
+        {
+          "id": "mass_mailing_crm",
+          "name": "Mass Mailing CRM"
+        },
+        {
+          "id": "mass_mailing_crm_sms",
+          "name": "Mass Mailing CRM SMS"
+        },
+        {
+          "id": "mass_mailing_event",
+          "name": "Mass Mailing Event"
+        },
+        {
+          "id": "mass_mailing_event_sms",
+          "name": "Mass Mailing Event SMS"
+        },
+        {
+          "id": "mass_mailing_event_track",
+          "name": "Mass Mailing Track"
+        },
+        {
+          "id": "mass_mailing_event_track_sms",
+          "name": "Mass Mailing Track SMS"
+        },
+        {
+          "id": "mass_mailing_sale",
+          "name": "Mass Mailing Sale"
+        },
+        {
+          "id": "mass_mailing_sale_sms",
+          "name": "Mass Mailing Sale SMS"
+        },
+        {
+          "id": "mass_mailing_slides",
+          "name": "Mass Mailing Slides"
+        },
+        {
+          "id": "mass_mailing_sms",
+          "name": "SMS Marketing"
+        },
+        {
+          "id": "mass_mailing_themes",
+          "name": "Mass Mailing Themes"
+        },
+        {
+          "id": "marketing_card",
+          "name": "Marketing Cards"
+        },
+        {
+          "id": "event",
+          "name": "Events"
+        },
+        {
+          "id": "event_crm",
+          "name": "Event CRM"
+        },
+        {
+          "id": "event_crm_sale",
+          "name": "Event CRM Sale"
+        },
+        {
+          "id": "event_product",
+          "name": "Event Product"
+        },
+        {
+          "id": "event_sale",
+          "name": "Event Sale"
+        },
+        {
+          "id": "event_sms",
+          "name": "Event SMS"
+        },
+        {
+          "id": "website",
+          "name": "Website"
+        },
+        {
+          "id": "portal",
+          "name": "Portal"
+        },
+        {
+          "id": "portal_rating",
+          "name": "Portal Rating"
+        },
+        {
+          "id": "membership",
+          "name": "Members"
+        }
+      ]
+    },
+    "core_system": {
+      "name": "Core System & Tools",
+      "description": "Standard Odoo internal system modules and technical tools.",
+      "modules": [
+        {
+          "id": "base",
+          "name": "Base"
+        },
+        {
+          "id": "web",
+          "name": "Web"
+        },
+        {
+          "id": "mail",
+          "name": "Discuss"
+        },
+        {
+          "id": "mail_bot",
+          "name": "OdooBot"
+        },
+        {
+          "id": "mail_bot_hr",
+          "name": "OdooBot HR"
+        },
+        {
+          "id": "mail_group",
+          "name": "Mailing Lists"
+        },
+        {
+          "id": "mail_plugin",
+          "name": "Mail Plugin"
+        },
+        {
+          "id": "barcodes",
+          "name": "Barcode"
+        },
+        {
+          "id": "base_address_extended",
+          "name": "Extended Addresses"
+        },
+        {
+          "id": "base_automation",
+          "name": "Automated Actions"
+        },
+        {
+          "id": "base_import",
+          "name": "Import CSV/Excel"
+        },
+        {
+          "id": "base_import_module",
+          "name": "Import Module"
+        },
+        {
+          "id": "base_setup",
+          "name": "Settings"
+        },
+        {
+          "id": "base_sparse_field",
+          "name": "Sparse Fields"
+        },
+        {
+          "id": "base_vat",
+          "name": "VAT"
+        },
+        {
+          "id": "board",
+          "name": "Dashboard"
+        },
+        {
+          "id": "bus",
+          "name": "Instant Messaging Bus"
+        },
+        {
+          "id": "calendar",
+          "name": "Calendar"
+        },
+        {
+          "id": "calendar_sms",
+          "name": "Calendar SMS"
+        },
+        {
+          "id": "data_recycle",
+          "name": "Data Recycle"
+        },
+        {
+          "id": "digest",
+          "name": "Digest Emails"
+        },
+        {
+          "id": "gamification",
+          "name": "Gamification"
+        },
+        {
+          "id": "google_recaptcha",
+          "name": "reCAPTCHA"
+        },
+        {
+          "id": "html_editor",
+          "name": "HTML Editor"
+        },
+        {
+          "id": "http_routing",
+          "name": "Web Routing"
+        },
+        {
+          "id": "iap",
+          "name": "IAP"
+        },
+        {
+          "id": "iap_crm",
+          "name": "IAP CRM"
+        },
+        {
+          "id": "iap_mail",
+          "name": "IAP Mail"
+        },
+        {
+          "id": "im_livechat",
+          "name": "Live Chat"
+        },
+        {
+          "id": "link_tracker",
+          "name": "Link Tracker"
+        },
+        {
+          "id": "maintenance",
+          "name": "Maintenance"
+        },
+        {
+          "id": "microsoft_account",
+          "name": "Microsoft Synchronization"
+        },
+        {
+          "id": "onboarding",
+          "name": "Onboarding"
+        },
+        {
+          "id": "partner_autocomplete",
+          "name": "Partner Autocomplete"
+        },
+        {
+          "id": "phone_validation",
+          "name": "Phone Validation"
+        },
+        {
+          "id": "privacy",
+          "name": "Privacy"
+        },
+        {
+          "id": "privacy_lookup",
+          "name": "Privacy Lookup"
         }
       ]
     }
