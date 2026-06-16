@@ -137,11 +137,11 @@ async function run() {
                 if (await fs.pathExists(manifestPath)) {
                     const manifest = parseManifest(manifestPath);
                     if (manifest) {
-                        const catKey = slugify(manifest.category);
+                        const catKey = "custom_addons";
                         if (!config[version][catKey]) {
                             config[version][catKey] = {
-                                name: manifest.category,
-                                description: `Odoo ${manifest.category} modules.`,
+                                name: "Custom Addons",
+                                description: "Addons directly placed in the custom folder.",
                                 modules: []
                             };
                         }
@@ -163,6 +163,10 @@ async function run() {
                     // E.g. search inside `scanPath/item/*`
                     try {
                         const subItems = await fs.readdir(itemPath);
+                        const repoName = item;
+                        const catKey = slugify(repoName);
+                        const displayName = repoName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
                         for (const subItem of subItems) {
                             const subItemPath = path.join(itemPath, subItem);
                             const subStat = await fs.stat(subItemPath);
@@ -172,12 +176,11 @@ async function run() {
                                 if (await fs.pathExists(subManifestPath)) {
                                     const manifest = parseManifest(subManifestPath);
                                     if (manifest) {
-                                        // Index the nested module
-                                        const catKey = slugify(manifest.category);
+                                        // Index the nested module under the repo's catKey
                                         if (!config[version][catKey]) {
                                             config[version][catKey] = {
-                                                name: manifest.category,
-                                                description: `Odoo ${manifest.category} modules.`,
+                                                name: displayName,
+                                                description: `Addons from the ${repoName} repository.`,
                                                 modules: []
                                             };
                                         }
