@@ -572,8 +572,15 @@ export async function POST(request: Request) {
                     if (process.platform !== 'win32') {
                         sendLog('info', `Configuring Nginx Proxy Manager routing for domain ${domain}...`);
                         try {
-                            const forwardHost = process.env.NPM_FORWARD_HOST || '172.17.0.1';
-                            const result = await npmClient.createProxyHost(domain, forwardHost, port, { scheme: 'https', ssl: true, letsEncryptAgree: true });
+                            const forwardHost = process.env.NPM_FORWARD_HOST || containerName;
+                            // If forwarding to an external/host IP, use the host's mapped port. 
+                            // If forwarding direct container-to-container on Docker network, use the internal port.
+                            const isCustomHost = !!process.env.NPM_FORWARD_HOST;
+                            const isOdoo19 = resolvedVersion.startsWith('19');
+                            const internalPort = isOdoo19 ? 8002 : 8001;
+                            const forwardPort = isCustomHost ? port : internalPort;
+
+                            const result = await npmClient.createProxyHost(domain, forwardHost, forwardPort, { scheme: 'https', ssl: true, letsEncryptAgree: true });
                             if (result) {
                                 sendLog('info', `NPM Proxy Host configured successfully.`);
                             } else {
