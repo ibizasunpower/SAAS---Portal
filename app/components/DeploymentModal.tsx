@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { X, Loader2, Server, Globe, Box, Search, CheckSquare, Square, Tag, Package, ChevronDown } from "lucide-react";
+import { X, Loader2, Server, Globe, Box, Search, CheckSquare, Square, Tag, Package, ChevronDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DeploymentModalProps {
@@ -41,8 +41,30 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
     const [logs, setLogs] = useState<any[]>([]);
     const [moduleSearch, setModuleSearch] = useState("");
     const [activeCategory, setActiveCategory] = useState<string>("all");
+    const [showTemplateManager, setShowTemplateManager] = useState(false);
 
     const logContainerRef = useRef<HTMLDivElement>(null);
+
+    const fetchTemplates = async () => {
+        try {
+            const res = await fetch('/api/templates');
+            if (res.ok) {
+                const data = await res.json();
+                setTemplates(data);
+                const currentExists = data.some((t: any) => t.id === formData.template);
+                if (!currentExists) {
+                    const defaultTpl = data.find((t: any) => t.id === `odoo${formData.version}`);
+                    if (defaultTpl) {
+                        setFormData(prev => ({ ...prev, template: defaultTpl.id }));
+                    } else if (data.length > 0) {
+                        setFormData(prev => ({ ...prev, template: data[0].id, version: data[0].version }));
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch templates:", err);
+        }
+    };
 
     useEffect(() => {
         if (logContainerRef.current) {
@@ -52,23 +74,6 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
 
     useEffect(() => {
         if (!isOpen) return;
-        const fetchTemplates = async () => {
-            try {
-                const res = await fetch('/api/templates');
-                if (res.ok) {
-                    const data = await res.json();
-                    setTemplates(data);
-                    const defaultTpl = data.find((t: any) => t.id === `odoo${formData.version}`);
-                    if (defaultTpl) {
-                        setFormData(prev => ({ ...prev, template: defaultTpl.id }));
-                    } else if (data.length > 0) {
-                        setFormData(prev => ({ ...prev, template: data[0].id, version: data[0].version }));
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch templates:", err);
-            }
-        };
         fetchTemplates();
         setSelectedModules([]);
         setModuleSearch("");
@@ -304,9 +309,20 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                                <Box size={14} /> Deployment Template
-                            </label>
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                                    <Box size={14} /> Deployment Template
+                                </label>
+                                {templates.some(t => t.is_custom) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTemplateManager(true)}
+                                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                    >
+                                        Manage
+                                    </button>
+                                )}
+                            </div>
                             <select
                                 disabled={loading}
                                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm cursor-pointer"
@@ -581,6 +597,77 @@ export function DeploymentModal({ isOpen, onClose, onSuccess }: DeploymentModalP
                     </div>
                 )}
             </div>
+
+            {/* Template Manager Sub-Modal */}
+            {showTemplateManager && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in zoom-in-95 duration-200 flex flex-col">
+                        <button
+                            type="button"
+                            onClick={() => setShowTemplateManager(false)}
+                            className="absolute right-4 top-4 text-zinc-500 hover:text-white transition-colors"
+                        >
+                            <X size={18} />
+                        </button>
+                        
+                        <h3 className="text-lg font-bold text-white mb-1">Manage Custom Templates</h3>
+                        <p className="text-zinc-400 text-xs mb-4">Delete custom templates that are no longer needed.</p>
+
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                            {templates.filter(t => t.is_custom).length === 0 ? (
+                                <p className="text-center text-xs text-zinc-500 py-6">No custom templates available.</p>
+                            ) : (
+                                templates.filter(t => t.is_custom).map(t => (
+                                    <div key={t.id} className="flex justify-between items-center bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-3 hover:border-zinc-800 transition-all">
+                                        <div className="min-w-0 flex-grow pr-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-white truncate">{t.name}</span>
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">Odoo {t.version}.0</span>
+                                            </div>
+                                            {t.description && (
+                                                <p className="text-[10px] text-zinc-500 mt-1 truncate">{t.description}</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (confirm(`Are you sure you want to delete the template "${t.name}"? This cannot be undone.`)) {
+                                                    try {
+                                                        const res = await fetch('/api/templates', {
+                                                            method: 'DELETE',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ templateId: t.id })
+                                                        });
+                                                        if (!res.ok) {
+                                                            const data = await res.json();
+                                                            throw new Error(data.error || 'Failed to delete template');
+                                                        }
+                                                        await fetchTemplates();
+                                                    } catch (err: any) {
+                                                        alert(`Error: ${err.message}`);
+                                                    }
+                                                }
+                                            }}
+                                            className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all shrink-0"
+                                            title="Delete Template"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowTemplateManager(false)}
+                            className="mt-4 w-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold py-2.5 rounded-lg transition-colors border border-zinc-800/80"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -197,3 +197,42 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+export async function DELETE(request: Request) {
+    try {
+        const body = await request.json();
+        const { templateId } = body;
+
+        if (!templateId) {
+            return NextResponse.json({ error: 'Missing templateId parameter' }, { status: 400 });
+        }
+
+        // Clean template name to prevent path traversal
+        const cleanedId = templateId.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (!cleanedId) {
+            return NextResponse.json({ error: 'Invalid templateId' }, { status: 400 });
+        }
+
+        const templatePath = path.join(TEMPLATE_DIR, cleanedId);
+
+        if (!await fs.pathExists(templatePath)) {
+            return NextResponse.json({ error: `Template '${templateId}' not found` }, { status: 404 });
+        }
+
+        // Protect default templates
+        const protectedTemplates = ['odoo18', 'odoo19', 'odoo18-saas-template'];
+        if (protectedTemplates.includes(cleanedId)) {
+            return NextResponse.json({ error: 'Cannot delete default system templates' }, { status: 403 });
+        }
+
+        await logger.info('PROVISION', `Deleting template '${cleanedId}'...`);
+        await fs.remove(templatePath);
+        await logger.info('PROVISION', `Template '${cleanedId}' successfully deleted.`);
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        await logger.error('PROVISION', 'Template deletion failed', { error: error.message });
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
