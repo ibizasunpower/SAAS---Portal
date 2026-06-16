@@ -94,7 +94,8 @@ export async function GET(
         }
 
         // Check if response is zip or error html page
-        if (response.headers['content-type']?.includes('text/html') || response.status !== 200) {
+        const contentType = response.headers['content-type'] ? String(response.headers['content-type']) : '';
+        if (contentType.includes('text/html') || response.status !== 200) {
             const errorText = Buffer.from(response.data).toString('utf8');
             await logger.error('DATABASE', `Odoo native backup failed. Response: ${errorText.substring(0, 500)}`, { id });
             return NextResponse.json({ error: 'Odoo backup failed. Verify master password or database state.' }, { status: 500 });
