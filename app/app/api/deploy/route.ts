@@ -573,7 +573,7 @@ export async function POST(request: Request) {
                         sendLog('info', `Configuring Nginx Proxy Manager routing for domain ${domain}...`);
                         try {
                             const forwardHost = process.env.NPM_FORWARD_HOST || '172.17.0.1';
-                            const result = await npmClient.createProxyHost(domain, forwardHost, 8001, { scheme: 'https', ssl: true, letsEncryptAgree: true });
+                            const result = await npmClient.createProxyHost(domain, forwardHost, port, { scheme: 'https', ssl: true, letsEncryptAgree: true });
                             if (result) {
                                 sendLog('info', `NPM Proxy Host configured successfully.`);
                             } else {
