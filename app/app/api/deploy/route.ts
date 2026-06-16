@@ -407,7 +407,7 @@ export async function POST(request: Request) {
                     try {
                         await runCommandStream(
                             'docker',
-                            ['exec', '-u', 'root', containerName, 'pip3', 'install', '--upgrade', 'PyJWT'],
+                            ['exec', '-u', 'root', containerName, 'pip3', 'install', '--break-system-packages', '--upgrade', 'PyJWT'],
                             {},
                             handleOutput
                         );
@@ -426,7 +426,7 @@ export async function POST(request: Request) {
                         try {
                             await runCommandStream(
                                 'docker',
-                                ['exec', '-u', 'root', containerName, 'pip3', 'install', ...packagesList],
+                                ['exec', '-u', 'root', containerName, 'pip3', 'install', '--break-system-packages', ...packagesList],
                                 {},
                                 handleOutput
                             );
