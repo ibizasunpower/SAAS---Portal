@@ -229,16 +229,6 @@ export async function POST(request: Request) {
                     } catch (readErr: any) {
                         sendLog('stderr', `Warning: Failed to load modules configuration details: ${readErr.message}`);
                     }
-        // ------------------------------------------------
-        // Generate a requirements.txt file in the client directory for reference
-        try {
-            const reqPath = path.join(clientDir, 'requirements.txt');
-            const reqContent = Array.from(pythonPackagesToInstall).sort().join('\n');
-            await fs.writeFile(reqPath, reqContent, 'utf8');
-            sendLog('info', `Generated requirements.txt (${pythonPackagesToInstall.size} packages) for ${clientName}.`);
-        } catch (reqErr: any) {
-            sendLog('stderr', `Failed to write requirements.txt: ${reqErr.message}`);
-        }
 
                     // Step 1: Pre-creating database
                     sendLog('info', `[1/6] Pre-creating PostgreSQL database: ${dbName}...`);
@@ -316,6 +306,17 @@ export async function POST(request: Request) {
                     // Step 2: Copy template
                     sendLog('info', `[2/6] Copying Odoo template files to clients/${containerName}...`);
                     await fs.copy(templatePath, clientDir);
+
+                    // Generate a requirements.txt file in the client directory for reference
+                    try {
+                        const reqPath = path.join(clientDir, 'requirements.txt');
+                        pythonPackagesToInstall.add('PyJWT');
+                        const reqContent = Array.from(pythonPackagesToInstall).sort().join('\n');
+                        await fs.writeFile(reqPath, reqContent, 'utf8');
+                        sendLog('info', `Generated requirements.txt (${pythonPackagesToInstall.size} packages) for ${clientName}.`);
+                    } catch (reqErr: any) {
+                        sendLog('stderr', `Failed to write requirements.txt: ${reqErr.message}`);
+                    }
 
                     // Step 3: Customize configuration
                     sendLog('info', `[3/6] Customizing docker-compose.yml and odoo.conf files...`);
